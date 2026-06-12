@@ -56,16 +56,50 @@ export interface LoggedRequest {
   responseHeaders?: Record<string, string>;
 }
 
-export type SidebarTab = 'collections' | 'history';
+export type SidebarTab = 'collections' | 'history' | 'mock';
+
+// ============== Mock Rules (Modify Response) ==============
+export type RuleMatchMode = 'contains' | 'exact' | 'regex';
+export type MockMode = 'replace' | 'patch-json';
+
+export interface JsonPatch {
+  id: string;
+  path: string;        // e.g. "data.user.name" or "data.list[0].id"
+  value: string;       // literal string; prefix with "::raw::" to inject as raw JSON
+  enabled: boolean;
+}
+
+export interface MockRule {
+  id: string;
+  name: string;
+  enabled: boolean;
+  // matching
+  urlPattern: string;
+  matchMode: RuleMatchMode;
+  method: HttpMethod | 'ANY';
+  // modification
+  mode: MockMode;
+  // mode = 'replace'
+  replaceStatus?: number;
+  replaceContentType?: string;
+  replaceBody?: string;
+  // mode = 'patch-json'
+  jsonPatches?: JsonPatch[];
+  // metadata
+  createdAt: number;
+  hitCount?: number;
+  lastHitAt?: number;
+}
 
 // New: Tab Interface
 export interface TabItem {
-    id: string; // usually requestId or 'welcome'
-    type: 'request' | 'welcome';
+    id: string; // usually requestId, mockRuleId, or 'welcome'
+    type: 'request' | 'welcome' | 'mock';
     title: string;
     method?: HttpMethod;
     isDirty?: boolean; // Has unsaved changes (optional for future)
     data?: HttpRequest; // The actual request object if it's a request tab
+    mockData?: MockRule; // For mock-rule editor tabs
     // Persist response state per tab
     response?: HttpResponse | null;
     error?: string | null;

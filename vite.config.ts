@@ -35,7 +35,9 @@ export default defineConfig({
         popup: resolve('popup.html'),
         panel: resolve('panel.html'),
         devtools: resolve('devtools.html'),
-        background: resolve('background.ts') 
+        background: resolve('background.ts'),
+        'mock-bridge': resolve('mock-bridge.ts'),
+        'mock-injector': resolve('mock-injector.ts')
       },
       output: {
         entryFileNames: '[name].js',

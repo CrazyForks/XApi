@@ -1,9 +1,10 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { LoggedRequest, SidebarTab, CollectionItem, HttpRequest, TabItem } from '../types';
+import { LoggedRequest, SidebarTab, CollectionItem, HttpRequest, TabItem, MockRule } from '../types';
 import { formatUrl, formatTime, getMethodColor, generateCurl, generateCurlFromRequest } from '../utils';
 import { Logo } from './Logo';
 import { APP_CONFIG } from '../config';
+import { MockList } from './MockList';
 
 interface SidebarProps {
   activeTab: SidebarTab;
@@ -31,6 +32,16 @@ interface SidebarProps {
   onToggleRecording?: () => void;
   onCollapseSidebar: () => void;
   onResetAllData: () => void;
+  // mock
+  mockRules: MockRule[];
+  mockGlobalEnabled: boolean;
+  onSelectMockRule: (rule: MockRule) => void;
+  onCreateMockRule: () => void;
+  onToggleMockGlobal: () => void;
+  onToggleMockRule: (id: string) => void;
+  onDeleteMockRule: (id: string) => void;
+  onDuplicateMockRule: (id: string) => void;
+  onMockFromLog: (log: LoggedRequest) => void;
 }
 
 const copyToClipboard = (text: string): boolean => {
@@ -49,8 +60,9 @@ const copyToClipboard = (text: string): boolean => {
     } catch (err) { return false; }
 };
 
-export const Sidebar: React.FC<SidebarProps> = ({ 
-  activeTab, onTabChange, history, onImportLoggedRequest, collections, rootRequests, tabs, activeRequestId, onSelectRequest, onCreateCollection, onCreateRequest, onImportCurl, onClearHistory, onDeleteLog, onRenameCollection, onRenameRequest, onDeleteCollection, onDeleteRequest, onDuplicateRequest, onToggleCollapse, onMoveRequest, isRecording, onToggleRecording, onCollapseSidebar, onResetAllData
+export const Sidebar: React.FC<SidebarProps> = ({
+  activeTab, onTabChange, history, onImportLoggedRequest, collections, rootRequests, tabs, activeRequestId, onSelectRequest, onCreateCollection, onCreateRequest, onImportCurl, onClearHistory, onDeleteLog, onRenameCollection, onRenameRequest, onDeleteCollection, onDeleteRequest, onDuplicateRequest, onToggleCollapse, onMoveRequest, isRecording, onToggleRecording, onCollapseSidebar, onResetAllData,
+  mockRules, mockGlobalEnabled, onSelectMockRule, onCreateMockRule, onToggleMockGlobal, onToggleMockRule, onDeleteMockRule, onDuplicateMockRule, onMockFromLog
 }) => {
   const [contextMenu, setContextMenu] = useState<{ x: number, y: number, type: 'collection' | 'request' | 'log', id: string, data?: any } | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -217,10 +229,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <button onClick={() => onTabChange('history')} className={`flex-1 py-2 text-center transition-all ${activeTab === 'history' ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/30' : 'text-gray-400 hover:text-gray-600'}`}>
             {capturedText} ({history.length})
         </button>
+        <button onClick={() => onTabChange('mock')} className={`flex-1 py-2 text-center transition-all ${activeTab === 'mock' ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/30' : 'text-gray-400 hover:text-gray-600'}`}>
+            {chrome.i18n.getMessage("mockTab") || 'Mock'} ({mockRules.length})
+        </button>
       </div>
 
       <div className="flex-1 overflow-y-auto no-scrollbar">
-        {activeTab === 'history' ? (
+        {activeTab === 'mock' ? (
+          <MockList
+            rules={mockRules}
+            globalEnabled={mockGlobalEnabled}
+            activeRuleId={activeRequestId}
+            onSelect={onSelectMockRule}
+            onCreate={onCreateMockRule}
+            onToggleGlobal={onToggleMockGlobal}
+            onToggleRule={onToggleMockRule}
+            onDelete={onDeleteMockRule}
+            onDuplicate={onDuplicateMockRule}
+          />
+        ) : activeTab === 'history' ? (
           <div className="divide-y divide-gray-100">
              <div className="p-2 bg-gray-50 flex flex-col space-y-2 sticky top-0 z-10 border-b border-gray-200">
                  <div className="flex items-center justify-between">
@@ -339,6 +366,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
               {contextMenu.type === 'log' && (
                   <>
                       <button className="w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 flex items-center" onClick={() => { onMoveRequest(contextMenu.id, null); setContextMenu(null); }}><svg className="w-3.5 h-3.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" strokeWidth={2}/></svg>{saveText}</button>
+                      <button className="w-full text-left px-4 py-2 text-xs text-indigo-600 hover:bg-indigo-50 flex items-center" onClick={() => { onMockFromLog(contextMenu.data); setContextMenu(null); }}>
+                        <svg className="w-3.5 h-3.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                        {chrome.i18n.getMessage("mockThis") || 'Mock this response'}
+                      </button>
                       <button className="w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 flex items-center" onClick={() => { copyToClipboard(generateCurl(contextMenu.data)); setContextMenu(null); }}><svg className="w-3.5 h-3.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" strokeWidth={2}/></svg>{copyCurlText}</button>
                       <button className="w-full text-left px-4 py-2 text-xs text-red-600 hover:bg-red-50 flex items-center" onClick={() => { onDeleteLog(contextMenu.id); setContextMenu(null); }}><svg className="w-3.5 h-3.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" strokeWidth={2}/></svg>{deleteText}</button>
                   </>

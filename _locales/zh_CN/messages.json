@@ -402,5 +402,121 @@
   "pending": {
     "message": "待定...",
     "description": "待定状态文字"
+  },
+  "mockTab": {
+    "message": "Mock",
+    "description": "侧边栏 Mock 标签"
+  },
+  "mockGlobalOn": {
+    "message": "MOCK 已开启",
+    "description": "Mock 全局开关开启时的提示"
+  },
+  "mockGlobalOff": {
+    "message": "MOCK 已关闭",
+    "description": "Mock 全局开关关闭时的提示"
+  },
+  "mockNewRule": {
+    "message": "新建规则",
+    "description": "新建 Mock 规则按钮"
+  },
+  "mockListEmpty": {
+    "message": "暂无 Mock 规则",
+    "description": "Mock 规则列表为空时的提示"
+  },
+  "mockListEmptyHint": {
+    "message": "在已捕获请求上右键 → \"Mock 此响应\" 即可快速开始。",
+    "description": "Mock 规则列表为空时的提示文案"
+  },
+  "mockHits": {
+    "message": "命中",
+    "description": "Mock 规则命中次数标签"
+  },
+  "mockThis": {
+    "message": "Mock 此响应",
+    "description": "在捕获请求右键菜单中创建 Mock 规则"
+  },
+  "mockRuleEnabled": {
+    "message": "已启用",
+    "description": "单条 Mock 规则启用开关"
+  },
+  "mockRuleNamePlaceholder": {
+    "message": "为这条规则起个名字",
+    "description": "Mock 规则名称占位符"
+  },
+  "mockMatchSection": {
+    "message": "匹配",
+    "description": "Mock 编辑器匹配区块标题"
+  },
+  "mockModifySection": {
+    "message": "修改",
+    "description": "Mock 编辑器修改区块标题"
+  },
+  "mockUrlPattern": {
+    "message": "URL 模式",
+    "description": "URL 匹配模式输入框标签"
+  },
+  "mockUrlPatternPlaceholder": {
+    "message": "例如 /api/user/info",
+    "description": "URL 模式占位符"
+  },
+  "mockMatchMode": {
+    "message": "匹配方式",
+    "description": "匹配方式分段控制器标签"
+  },
+  "mockMethod": {
+    "message": "请求方法",
+    "description": "HTTP 方法选择器标签"
+  },
+  "mockModeReplace": {
+    "message": "整体替换返回结果",
+    "description": "Mock 模式：直接替换整个响应"
+  },
+  "mockModePatchJson": {
+    "message": "修改 JSON 字段",
+    "description": "Mock 模式：仅修改 JSON 中的某些字段"
+  },
+  "mockStatus": {
+    "message": "状态码",
+    "description": "响应状态码输入框标签"
+  },
+  "mockContentType": {
+    "message": "Content-Type",
+    "description": "响应 Content-Type 输入框标签"
+  },
+  "mockReplaceBody": {
+    "message": "响应内容",
+    "description": "响应内容文本域标签"
+  },
+  "mockFillFromHistory": {
+    "message": "从历史填充",
+    "description": "用历史捕获记录预填响应内容"
+  },
+  "mockJsonPathHeader": {
+    "message": "字段路径",
+    "description": "JSON Patch 字段路径列标题"
+  },
+  "mockJsonValueHeader": {
+    "message": "新的值",
+    "description": "JSON Patch 新值列标题"
+  },
+  "mockAddField": {
+    "message": "添加字段",
+    "description": "添加 JSON Patch 行按钮"
+  },
+  "mockRawValueHint": {
+    "message": "在值前加 \"::raw::\" 前缀可注入原始 JSON（数字 / 布尔 / null / 对象 / 数组）。",
+    "description": "JSON Patch 原始值前缀提示"
+  },
+  "mockNoSample": {
+    "message": "暂无与该 URL 匹配的捕获记录，请手动填写路径。",
+    "description": "无可参考样本时的提示"
+  },
+  "mockDisabledHint": {
+    "message": "该规则已禁用，不会影响任何请求。",
+    "description": "当前规则禁用时的提示横幅"
+  },
+  "mockNoPatches": {
+    "message": "尚未配置任何字段。点击下方 \"添加字段\" 开始。",
+    "description": "JSON Patch 表为空时的占位文案"
   }
 }

@@ -402,5 +402,121 @@
   "pending": {
     "message": "Pending...",
     "description": "Pending status text"
+  },
+  "mockTab": {
+    "message": "Mock",
+    "description": "Sidebar tab label for mock rules"
+  },
+  "mockGlobalOn": {
+    "message": "MOCK ON",
+    "description": "Label when mock global switch is on"
+  },
+  "mockGlobalOff": {
+    "message": "MOCK OFF",
+    "description": "Label when mock global switch is off"
+  },
+  "mockNewRule": {
+    "message": "New Rule",
+    "description": "Button text to create a new mock rule"
+  },
+  "mockListEmpty": {
+    "message": "No mock rules yet",
+    "description": "Empty state for the mock list"
+  },
+  "mockListEmptyHint": {
+    "message": "Right-click a captured request → \"Mock this\" to start fast.",
+    "description": "Hint shown in the empty mock list"
+  },
+  "mockHits": {
+    "message": "Hits",
+    "description": "Label for hit count of a mock rule"
+  },
+  "mockThis": {
+    "message": "Mock this response",
+    "description": "Context menu label to create a mock rule from a captured request"
+  },
+  "mockRuleEnabled": {
+    "message": "Enabled",
+    "description": "Toggle label to enable/disable a single mock rule"
+  },
+  "mockRuleNamePlaceholder": {
+    "message": "Friendly rule name",
+    "description": "Placeholder for the rule name input"
+  },
+  "mockMatchSection": {
+    "message": "Match",
+    "description": "Section title for matching configuration"
+  },
+  "mockModifySection": {
+    "message": "Modify",
+    "description": "Section title for response modification"
+  },
+  "mockUrlPattern": {
+    "message": "URL Pattern",
+    "description": "Label for the URL match pattern input"
+  },
+  "mockUrlPatternPlaceholder": {
+    "message": "e.g. /api/user/info",
+    "description": "Placeholder for the URL pattern input"
+  },
+  "mockMatchMode": {
+    "message": "Match",
+    "description": "Label for the match mode segmented control"
+  },
+  "mockMethod": {
+    "message": "Method",
+    "description": "Label for the HTTP method selector"
+  },
+  "mockModeReplace": {
+    "message": "Replace whole response",
+    "description": "Mock mode option: replace entire response"
+  },
+  "mockModePatchJson": {
+    "message": "Modify JSON fields",
+    "description": "Mock mode option: patch fields inside the real JSON response"
+  },
+  "mockStatus": {
+    "message": "Status",
+    "description": "Label for response status code input"
+  },
+  "mockContentType": {
+    "message": "Content-Type",
+    "description": "Label for response content-type input"
+  },
+  "mockReplaceBody": {
+    "message": "Response Body",
+    "description": "Label for the response body textarea"
+  },
+  "mockFillFromHistory": {
+    "message": "Fill from history",
+    "description": "Button to prefill the response body from a captured request"
+  },
+  "mockJsonPathHeader": {
+    "message": "Field path",
+    "description": "Header for the JSON-patch field path column"
+  },
+  "mockJsonValueHeader": {
+    "message": "New value",
+    "description": "Header for the JSON-patch new value column"
+  },
+  "mockAddField": {
+    "message": "Add field",
+    "description": "Button to add a new JSON-patch row"
+  },
+  "mockRawValueHint": {
+    "message": "Use prefix \"::raw::\" to inject raw JSON (number/bool/null/object).",
+    "description": "Hint about raw value prefix for JSON patches"
+  },
+  "mockNoSample": {
+    "message": "No matching capture in history yet — type the path manually.",
+    "description": "Hint shown when there's no captured request matching the URL pattern"
+  },
+  "mockDisabledHint": {
+    "message": "This rule is disabled and will not affect any request.",
+    "description": "Banner shown when the current rule is disabled"
+  },
+  "mockNoPatches": {
+    "message": "No fields configured. Click \"Add field\" below to start.",
+    "description": "Empty state for the JSON-patch table"
   }
 }

@@ -6,8 +6,10 @@ import { ResponseViewer } from './components/ResponseViewer';
 import { WelcomeScreen } from './components/WelcomeScreen';
 import { Modal } from './components/Modal';
 import { TabBar } from './components/TabBar';
-import { HttpRequest, HttpResponse, LoggedRequest, SidebarTab, CollectionItem, KeyValue, TabItem } from './types';
+import { MockEditor } from './components/MockEditor';
+import { HttpRequest, HttpResponse, LoggedRequest, SidebarTab, CollectionItem, KeyValue, TabItem, MockRule } from './types';
 import { generateId, queryStringToParams, parseCurl } from './utils';
+import { createMockRule, MOCK_RULES_KEY, MOCK_GLOBAL_ENABLED_KEY } from './mockUtils';
 
 // 浏览器禁止通过 fetch 接口设置的请求头列表
 const FORBIDDEN_HEADERS = [
@@ -72,20 +74,25 @@ const App: React.FC = () => {
   const [isCurlModalOpen, setIsCurlModalOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [curlInput, setCurlInput] = useState('');
+  const [mockRules, setMockRules] = useState<MockRule[]>([]);
+  const [mockGlobalEnabled, setMockGlobalEnabled] = useState(true);
   const initializedRef = useRef(false);
-  
+
   const activeTab = tabs.find(t => t.id === activeTabId);
   const activeRequest = activeTab?.data || null;
+  const activeMockRule = activeTab?.mockData || null;
   const activeResponse = activeTab?.response || null;
   const activeError = activeTab?.error || null;
   const activeIsLoading = activeTab?.isLoading || false;
 
   useEffect(() => {
     if (chrome && chrome.storage && chrome.storage.local) {
-      chrome.storage.local.get(['collections', 'logs', 'savedTabs', 'savedActiveTabId', 'isRecording', 'rootRequests'], (result) => {
+      chrome.storage.local.get(['collections', 'logs', 'savedTabs', 'savedActiveTabId', 'isRecording', 'rootRequests', MOCK_RULES_KEY, MOCK_GLOBAL_ENABLED_KEY], (result) => {
         if (result.collections) setCollections(result.collections);
         if (result.rootRequests) setRootRequests(result.rootRequests);
         setIsRecording(!!result.isRecording);
+        if (result[MOCK_RULES_KEY]) setMockRules(result[MOCK_RULES_KEY]);
+        setMockGlobalEnabled(result[MOCK_GLOBAL_ENABLED_KEY] !== false);
         
         const logs = result.logs || [];
         setHistory(logs);
@@ -112,6 +119,8 @@ const App: React.FC = () => {
         if (changes.collections) setCollections(changes.collections.newValue || []);
         if (changes.rootRequests) setRootRequests(changes.rootRequests.newValue || []);
         if (changes.isRecording) setIsRecording(changes.isRecording.newValue);
+        if (changes[MOCK_RULES_KEY]) setMockRules(changes[MOCK_RULES_KEY].newValue || []);
+        if (changes[MOCK_GLOBAL_ENABLED_KEY]) setMockGlobalEnabled(changes[MOCK_GLOBAL_ENABLED_KEY].newValue !== false);
       };
       chrome.storage.onChanged.addListener(listener);
       return () => chrome.storage.onChanged.removeListener(listener);
@@ -133,6 +142,79 @@ const App: React.FC = () => {
       const newTab: TabItem = { id: req.id, type: 'request', title: req.name, method: req.method, data: req, isLoading: false, response: null, error: null };
       setTabs(prev => prev[0]?.type === 'welcome' ? [newTab] : [...prev, newTab]);
       setActiveTabId(req.id);
+  };
+
+  const openMockRuleInTab = (rule: MockRule) => {
+      const existing = tabs.find(t => t.id === rule.id);
+      if (existing) { setActiveTabId(rule.id); return; }
+      const newTab: TabItem = { id: rule.id, type: 'mock', title: rule.name || 'Mock', mockData: rule };
+      setTabs(prev => prev[0]?.type === 'welcome' ? [newTab] : [...prev, newTab]);
+      setActiveTabId(rule.id);
+  };
+
+  const persistMockRules = (next: MockRule[]) => {
+      setMockRules(next);
+      chrome.storage.local.set({ [MOCK_RULES_KEY]: next });
+  };
+
+  const handleCreateMockRule = () => {
+      const r = createMockRule();
+      const next = [r, ...mockRules];
+      persistMockRules(next);
+      openMockRuleInTab(r);
+      setSidebarTab('mock');
+  };
+
+  const handleUpdateMockRule = (updated: MockRule) => {
+      const next = mockRules.map(r => r.id === updated.id ? updated : r);
+      persistMockRules(next);
+      setTabs(prev => prev.map(t => t.id === updated.id ? { ...t, title: updated.name || 'Mock', mockData: updated } : t));
+  };
+
+  const handleDeleteMockRule = (id: string) => {
+      const next = mockRules.filter(r => r.id !== id);
+      persistMockRules(next);
+      handleTabClose(id);
+  };
+
+  const handleDuplicateMockRule = (id: string) => {
+      const found = mockRules.find(r => r.id === id);
+      if (!found) return;
+      const copy: MockRule = { ...found, id: generateId(), name: `${found.name} Copy`, hitCount: 0, createdAt: Date.now() };
+      persistMockRules([copy, ...mockRules]);
+  };
+
+  const handleToggleMockRule = (id: string) => {
+      const next = mockRules.map(r => r.id === id ? { ...r, enabled: !r.enabled } : r);
+      persistMockRules(next);
+  };
+
+  const handleToggleMockGlobal = () => {
+      const next = !mockGlobalEnabled;
+      setMockGlobalEnabled(next);
+      chrome.storage.local.set({ [MOCK_GLOBAL_ENABLED_KEY]: next });
+  };
+
+  const handleMockFromLog = (log: LoggedRequest) => {
+      // Build a starter rule from a captured request: URL contains the path,
+      // replace mode, status 200, JSON content type. Body is empty until the
+      // user pastes a sample — we don't capture response bodies in storage.
+      let urlPattern = log.url;
+      try {
+          const u = new URL(log.url);
+          urlPattern = u.pathname || log.url;
+      } catch { /* noop */ }
+      const r = createMockRule({
+          name: urlPattern,
+          urlPattern,
+          matchMode: 'contains',
+          method: (log.method?.toUpperCase() as any) || 'ANY',
+          mode: 'replace',
+          replaceBody: '{\n  "code": 0,\n  "data": {}\n}'
+      });
+      persistMockRules([r, ...mockRules]);
+      openMockRuleInTab(r);
+      setSidebarTab('mock');
   };
 
   const handleTabClose = (id: string, e?: React.MouseEvent) => {
@@ -391,6 +473,15 @@ const App: React.FC = () => {
           onToggleRecording={() => { setIsRecording(!isRecording); chrome.storage.local.set({ isRecording: !isRecording }); }}
           onCollapseSidebar={() => setIsSidebarCollapsed(true)}
           onResetAllData={handleClearAllData}
+          mockRules={mockRules}
+          mockGlobalEnabled={mockGlobalEnabled}
+          onSelectMockRule={openMockRuleInTab}
+          onCreateMockRule={handleCreateMockRule}
+          onToggleMockGlobal={handleToggleMockGlobal}
+          onToggleMockRule={handleToggleMockRule}
+          onDeleteMockRule={handleDeleteMockRule}
+          onDuplicateMockRule={handleDuplicateMockRule}
+          onMockFromLog={handleMockFromLog}
         />
       )}
       <div className="flex-1 flex flex-col min-w-0 bg-white relative">
@@ -405,7 +496,13 @@ const App: React.FC = () => {
          )}
          <TabBar tabs={tabs} activeTabId={activeTabId} onTabClick={handleTabClick} onTabClose={handleTabClose} onTabReorder={(f, t) => { const next = [...tabs]; const [m] = next.splice(f, 1); next.splice(t, 0, m); setTabs(next); }} onTabRename={handleTabRename} onTabAction={(a, tid) => { const idx = tabs.findIndex(t => t.id === tid); let next: TabItem[] = []; switch (a) { case 'close-others': next = tabs.filter(t => t.id === tid); break; case 'close-right': next = tabs.filter((_, i) => i <= idx); break; case 'close-left': next = tabs.filter((_, i) => i >= idx); break; case 'close-all': next = []; break; } setTabs(next.length === 0 ? [{ id: 'welcome', type: 'welcome', title: chrome.i18n.getMessage("welcomeTabTitle") }] : next); if (!next.find(t => t.id === activeTabId)) setActiveTabId(next[next.length - 1]?.id || 'welcome'); }} collections={collections} onSaveToCollection={handleSaveToCollection} />
          <div className="flex-1 flex flex-col relative overflow-hidden">
-            {!activeRequest || activeTabId === 'welcome' ? (
+            {activeTab?.type === 'mock' && activeMockRule ? (
+                <MockEditor
+                    rule={activeMockRule}
+                    history={history}
+                    onRuleChange={handleUpdateMockRule}
+                />
+            ) : !activeRequest || activeTabId === 'welcome' ? (
                 <WelcomeScreen onCreateRequest={handleCreateRequest} onCreateCollection={() => {}} onImportCurl={() => setIsCurlModalOpen(true)} />
             ) : (
                 <>
