@@ -6,7 +6,7 @@
  * content script). It cannot use chrome.* APIs.
  */
 
-type RuleMatchMode = 'contains' | 'exact' | 'regex';
+type RuleMatchMode = 'startsWith';
 type MockMode = 'replace' | 'patch-json';
 
 interface JsonPatch {
@@ -55,14 +55,9 @@ const reportHit = (ruleId: string) => {
 };
 
 // ----- match ------
-const matchUrl = (url: string, pattern: string, mode: RuleMatchMode): boolean => {
+const matchUrl = (url: string, pattern: string, _mode: RuleMatchMode): boolean => {
   if (!pattern) return false;
-  if (mode === 'exact') return url === pattern;
-  if (mode === 'contains') return url.includes(pattern);
-  if (mode === 'regex') {
-    try { return new RegExp(pattern).test(url); } catch { return false; }
-  }
-  return false;
+  return url.startsWith(pattern);
 };
 
 const matchRule = (url: string, method: string): MockRule | undefined => {

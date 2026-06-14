@@ -207,7 +207,7 @@ const App: React.FC = () => {
       const r = createMockRule({
           name: urlPattern,
           urlPattern,
-          matchMode: 'contains',
+          matchMode: 'startsWith',
           method: (log.method?.toUpperCase() as any) || 'ANY',
           mode: 'replace',
           replaceBody: '{\n  "code": 0,\n  "data": {}\n}'

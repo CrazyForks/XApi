@@ -59,7 +59,7 @@ export interface LoggedRequest {
 export type SidebarTab = 'collections' | 'history' | 'mock';
 
 // ============== Mock Rules (Modify Response) ==============
-export type RuleMatchMode = 'contains' | 'exact' | 'regex';
+export type RuleMatchMode = 'startsWith';
 export type MockMode = 'replace' | 'patch-json';
 
 export interface JsonPatch {

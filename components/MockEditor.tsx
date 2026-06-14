@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { HttpMethod, JsonPatch, LoggedRequest, MockMode, MockRule, RuleMatchMode } from '../types';
+import { HttpMethod, JsonPatch, LoggedRequest, MockMode, MockRule } from '../types';
 import { collectJsonPaths, createJsonPatch } from '../mockUtils';
 
 interface MockEditorProps {
@@ -9,11 +9,6 @@ interface MockEditorProps {
 }
 
 const METHODS: (HttpMethod | 'ANY')[] = ['ANY', 'GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'];
-const MATCH_MODES: { value: RuleMatchMode; label: string }[] = [
-  { value: 'contains', label: 'contains' },
-  { value: 'exact', label: 'exact' },
-  { value: 'regex', label: 'regex' }
-];
 
 const t = (key: string, fallback: string) => {
   try {
@@ -46,14 +41,7 @@ export const MockEditor: React.FC<MockEditorProps> = ({ rule, history, onRuleCha
   // Find sample real responses for this URL pattern (best-effort).
   const sampleData = useMemo(() => {
     if (!rule.urlPattern) return null;
-    const matched = history.find(h => {
-      try {
-        if (rule.matchMode === 'exact') return h.url === rule.urlPattern;
-        if (rule.matchMode === 'contains') return h.url.includes(rule.urlPattern);
-        if (rule.matchMode === 'regex') return new RegExp(rule.urlPattern).test(h.url);
-      } catch { return false; }
-      return false;
-    });
+    const matched = history.find(h => h.url.startsWith(rule.urlPattern));
     return matched || null;
   }, [history, rule.urlPattern, rule.matchMode]);
 
@@ -83,8 +71,7 @@ export const MockEditor: React.FC<MockEditorProps> = ({ rule, history, onRuleCha
   const matchTitle = t('mockMatchSection', 'Match');
   const modifyTitle = t('mockModifySection', 'Modify');
   const urlPatternLabel = t('mockUrlPattern', 'URL Pattern');
-  const urlPatternPh = t('mockUrlPatternPlaceholder', 'e.g. /api/user/info');
-  const matchModeLabel = t('mockMatchMode', 'Match');
+  const urlPatternPh = t('mockUrlPatternPlaceholder', 'e.g. https://api.example.com/user');
   const methodLabel = t('mockMethod', 'Method');
   const modeReplace = t('mockModeReplace', 'Replace whole response');
   const modePatch = t('mockModePatchJson', 'Modify JSON fields');
@@ -155,20 +142,6 @@ export const MockEditor: React.FC<MockEditorProps> = ({ rule, history, onRuleCha
               />
             </div>
             <div className="flex space-x-3">
-              <div className="flex-1">
-                <div className="text-[11px] text-gray-500 mb-1">{matchModeLabel}</div>
-                <div className="flex bg-gray-100 rounded p-0.5">
-                  {MATCH_MODES.map(m => (
-                    <button
-                      key={m.value}
-                      onClick={() => update({ matchMode: m.value })}
-                      className={`flex-1 text-[11px] py-1 rounded transition-colors ${rule.matchMode === m.value ? 'bg-white text-green-700 font-semibold shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-                    >
-                      {m.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
               <div className="w-40">
                 <div className="text-[11px] text-gray-500 mb-1">{methodLabel}</div>
                 <select

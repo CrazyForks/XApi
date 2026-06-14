@@ -456,7 +456,7 @@
     "description": "URL 匹配模式输入框标签"
   },
   "mockUrlPatternPlaceholder": {
-    "message": "例如 /api/user/info",
+    "message": "例如 https://api.example.com/user",
     "description": "URL 模式占位符"
   },
   "mockMatchMode": {

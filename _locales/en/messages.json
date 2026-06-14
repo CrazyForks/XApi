@@ -456,7 +456,7 @@
     "description": "Label for the URL match pattern input"
   },
   "mockUrlPatternPlaceholder": {
-    "message": "e.g. /api/user/info",
+    "message": "e.g. https://api.example.com/user",
     "description": "Placeholder for the URL pattern input"
   },
   "mockMatchMode": {
