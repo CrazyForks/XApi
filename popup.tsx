@@ -6,8 +6,13 @@ import { LoggedRequest } from './types';
 import { formatUrl, formatTime, getMethodBadgeColor } from './utils';
 import { Logo } from './components/Logo';
 
+// Shared with App.tsx and mock-bridge.ts. Default ON when the value is missing
+// (i.e. `result[KEY] !== false`), matching how the panel and content script read it.
+const MOCK_GLOBAL_ENABLED_KEY = 'mockGlobalEnabled';
+
 const Popup = () => {
   const [isRecording, setIsRecording] = useState(false);
+  const [mockGlobalEnabled, setMockGlobalEnabled] = useState(true);
   const [logs, setLogs] = useState<LoggedRequest[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -20,12 +25,15 @@ const Popup = () => {
   const clearText = chrome.i18n.getMessage("clear");
   const openDashboardText = chrome.i18n.getMessage("openDashboard");
   const pendingText = chrome.i18n.getMessage("pending");
+  const mockOnText = chrome.i18n.getMessage("mockGlobalOn") || 'MOCK ON';
+  const mockOffText = chrome.i18n.getMessage("mockGlobalOff") || 'MOCK OFF';
 
   useEffect(() => {
     // Load initial state
     if (chrome.storage && chrome.storage.local) {
-      chrome.storage.local.get(['isRecording', 'logs'], (result) => {
+      chrome.storage.local.get(['isRecording', 'logs', MOCK_GLOBAL_ENABLED_KEY], (result) => {
         setIsRecording(!!result.isRecording);
+        setMockGlobalEnabled(result[MOCK_GLOBAL_ENABLED_KEY] !== false);
         setLogs(result.logs || []);
       });
 
@@ -35,6 +43,9 @@ const Popup = () => {
          }
          if (changes.isRecording) {
             setIsRecording(changes.isRecording.newValue);
+         }
+         if (changes[MOCK_GLOBAL_ENABLED_KEY]) {
+            setMockGlobalEnabled(changes[MOCK_GLOBAL_ENABLED_KEY].newValue !== false);
          }
       };
       chrome.storage.onChanged.addListener(listener);
@@ -46,6 +57,12 @@ const Popup = () => {
     const newState = !isRecording;
     setIsRecording(newState);
     chrome.storage.local.set({ isRecording: newState });
+  };
+
+  const toggleMockGlobal = () => {
+    const newState = !mockGlobalEnabled;
+    setMockGlobalEnabled(newState);
+    chrome.storage.local.set({ [MOCK_GLOBAL_ENABLED_KEY]: newState });
   };
 
   const clearLogs = () => {
@@ -73,12 +90,25 @@ const Popup = () => {
       <div className="px-4 py-3 bg-gray-900 text-white flex justify-between items-center shadow-md flex-shrink-0">
          <Logo size={18} textColor="text-white" />
          <div className="flex items-center space-x-2">
-             <button 
+             <button
+                onClick={toggleMockGlobal}
+                className={`relative inline-flex h-5 w-16 items-center rounded-full transition-colors ${mockGlobalEnabled ? 'bg-green-500' : 'bg-gray-600'}`}
+                title={mockGlobalEnabled ? mockOnText : mockOffText}
+             >
+                <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${mockGlobalEnabled ? 'translate-x-12' : 'translate-x-1'}`} />
+                <span className={`absolute text-[9px] font-bold uppercase tracking-wide text-white pointer-events-none ${mockGlobalEnabled ? 'left-1.5' : 'right-1.5'}`}>
+                   Mock
+                </span>
+             </button>
+             <button
                 onClick={toggleRecording}
-                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${isRecording ? 'bg-green-500' : 'bg-gray-600'}`}
+                className={`relative inline-flex h-5 w-16 items-center rounded-full transition-colors ${isRecording ? 'bg-green-500' : 'bg-gray-600'}`}
                 title={isRecording ? stopRecordingText : startRecordingText}
             >
-                <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${isRecording ? 'translate-x-5' : 'translate-x-1'}`} />
+                <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${isRecording ? 'translate-x-12' : 'translate-x-1'}`} />
+                <span className={`absolute text-[9px] font-bold uppercase tracking-wide text-white pointer-events-none ${isRecording ? 'left-1.5' : 'right-1.5'}`}>
+                   Record
+                </span>
             </button>
          </div>
       </div>

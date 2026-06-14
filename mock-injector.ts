@@ -54,6 +54,40 @@ const reportHit = (ruleId: string) => {
   window.postMessage({ source: MSG_TAG, type: 'hit', ruleId }, '*');
 };
 
+// Forward a captured JSON response body to the bridge → background, so the
+// recorded log entry can be augmented. Best-effort and bounded; failures here
+// must never affect the underlying request.
+const RESP_BODY_LIMIT = 200 * 1024; // 200KB
+const reportResponse = (
+  url: string,
+  method: string,
+  status: number,
+  contentType: string,
+  body: string
+) => {
+  try {
+    let truncated = false;
+    let payload = body;
+    if (payload.length > RESP_BODY_LIMIT) {
+      payload = payload.slice(0, RESP_BODY_LIMIT);
+      truncated = true;
+    }
+    window.postMessage({
+      source: MSG_TAG,
+      type: 'response',
+      url,
+      method: (method || 'GET').toUpperCase(),
+      status,
+      contentType,
+      body: payload,
+      truncated,
+      ts: Date.now()
+    }, '*');
+  } catch { /* noop */ }
+};
+
+const isJsonContentType = (ct: string) => !!ct && ct.toLowerCase().includes('json');
+
 // ----- match ------
 const matchUrl = (url: string, pattern: string, _mode: RuleMatchMode): boolean => {
   if (!pattern) return false;
@@ -152,7 +186,20 @@ window.fetch = async function patchedFetch(input: RequestInfo | URL, init?: Requ
   } catch { /* noop */ }
 
   const rule = url ? matchRule(url, method) : undefined;
-  if (!rule) return _fetch.call(window, input as any, init);
+  if (!rule) {
+    // No mock — let the request through, but try to capture JSON response
+    // for the recorded log. Cloning is cheap and safe; failures swallowed.
+    const res = await _fetch.call(window, input as any, init);
+    try {
+      const ct = res.headers.get('content-type') || '';
+      if (isJsonContentType(ct)) {
+        res.clone().text().then(body => {
+          reportResponse(url, method, res.status, ct, body);
+        }).catch(() => { /* noop */ });
+      }
+    } catch { /* noop */ }
+    return res;
+  }
 
   if (rule.mode === 'replace') {
     reportHit(rule.id);
@@ -167,6 +214,8 @@ window.fetch = async function patchedFetch(input: RequestInfo | URL, init?: Requ
   let data: any;
   try { data = await res.clone().json(); } catch { return res; }
   if (data == null || typeof data !== 'object') return res;
+  // Report the ORIGINAL response body before applying patches.
+  try { reportResponse(url, method, res.status, ct, JSON.stringify(data)); } catch { /* noop */ }
   const n = applyJsonPatches(data, rule.jsonPatches);
   if (n === 0) return res;
   reportHit(rule.id);
@@ -256,7 +305,32 @@ const fakeXhrResponse = (xhr: XMLHttpRequest, rule: MockRule, body: string, stat
 XHR.prototype.send = function (this: XMLHttpRequest, body?: any) {
   const meta = META.get(this);
   const rule = meta ? matchRule(meta.url, meta.method) : undefined;
-  if (!rule) return origSend.call(this, body);
+  if (!rule) {
+    // No mock — attach a capture-only listener so we can ship the JSON
+    // response body to the recorded log. addEventListener composes with
+    // whatever the caller later sets on .onreadystatechange / .onload.
+    if (meta) {
+      const xhr = this;
+      let captured = false;
+      const captureOnce = () => {
+        if (captured) return;
+        if (xhr.readyState !== 4) return;
+        captured = true;
+        try {
+          const ct = (xhr.getResponseHeader('content-type') || '').toLowerCase();
+          if (!ct.includes('json')) return;
+          const raw = typeof xhr.responseText === 'string' ? xhr.responseText : '';
+          if (!raw) return;
+          reportResponse(meta.url, meta.method, xhr.status, ct, raw);
+        } catch { /* noop */ }
+      };
+      try {
+        xhr.addEventListener('readystatechange', captureOnce);
+        xhr.addEventListener('load', captureOnce);
+      } catch { /* noop */ }
+    }
+    return origSend.call(this, body);
+  }
 
   if (rule.mode === 'replace') {
     reportHit(rule.id);
@@ -286,6 +360,8 @@ XHR.prototype.send = function (this: XMLHttpRequest, body?: any) {
     let raw: string | null = null;
     try { raw = typeof xhr.responseText === 'string' ? xhr.responseText : null; } catch { raw = null; }
     if (raw == null) return;
+    // Forward the ORIGINAL (pre-patch) body for the recorded log.
+    try { reportResponse(meta!.url, meta!.method, xhr.status, ct, raw); } catch { /* noop */ }
     let data: any;
     try { data = JSON.parse(raw); } catch { return; }
     if (data == null || typeof data !== 'object') return;

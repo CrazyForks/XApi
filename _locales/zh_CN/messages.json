@@ -518,5 +518,13 @@
   "mockNoPatches": {
     "message": "尚未配置任何字段。点击下方 \"添加字段\" 开始。",
     "description": "JSON Patch 表为空时的占位文案"
+  },
+  "mockSelectAll": {
+    "message": "全选",
+    "description": "JSON Patch 表头复选框（未全选时）的提示"
+  },
+  "mockDeselectAll": {
+    "message": "取消全选",
+    "description": "JSON Patch 表头复选框（已全选时）的提示"
   }
 }

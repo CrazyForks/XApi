@@ -147,6 +147,58 @@ export const collectJsonPaths = (data: any): string[] => {
   return out;
 };
 
+/**
+ * Stringify a leaf JSON value into the textual form used by the patch editor.
+ * Plain strings stay as-is; numbers/booleans/null are wrapped with the
+ * "::raw::" prefix so applyJsonPatch -> interpretValue inflates them back.
+ */
+const stringifyLeafValue = (v: any): string => {
+  if (typeof v === 'string') return v;
+  if (v === null || typeof v === 'number' || typeof v === 'boolean') {
+    return `::raw::${JSON.stringify(v)}`;
+  }
+  // Should not happen — collectJsonPaths only descends to leaves — but if a
+  // sparse array slot or odd value sneaks in, fall back to JSON.
+  try { return `::raw::${JSON.stringify(v)}`; } catch { return ''; }
+};
+
+/**
+ * Walk a JSON value the same way collectJsonPaths does and produce JsonPatch
+ * rows pre-filled with the current value. Used by "Mock this response" to
+ * seed the patch-json editor from a captured response body. Bounded by the
+ * same MAX/MAX_DEPTH so we don't explode on huge payloads.
+ */
+export const buildPatchesFromJson = (data: any): JsonPatch[] => {
+  const out: JsonPatch[] = [];
+  const MAX = 200;
+  const MAX_DEPTH = 6;
+  const push = (path: string, value: any) => {
+    if (!path) return;
+    out.push({ id: generateId(), path, value: stringifyLeafValue(value), enabled: true });
+  };
+  const walk = (v: any, prefix: string, depth: number) => {
+    if (out.length >= MAX || depth > MAX_DEPTH) return;
+    if (v == null || typeof v !== 'object') { push(prefix, v); return; }
+    if (Array.isArray(v)) {
+      if (v.length > 0) walk(v[0], `${prefix}[0]`, depth + 1);
+      // Empty arrays are not patchable as leaves — skip.
+      return;
+    }
+    const keys = Object.keys(v);
+    if (keys.length === 0) {
+      // Empty object — not patchable as a leaf, skip.
+      return;
+    }
+    for (const k of keys) {
+      if (out.length >= MAX) break;
+      const next = prefix ? `${prefix}.${k}` : k;
+      walk(v[k], next, depth + 1);
+    }
+  };
+  walk(data, '', 0);
+  return out;
+};
+
 // ============== Factories ==============
 
 export const createMockRule = (partial?: Partial<MockRule>): MockRule => ({

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { MockRule } from '../types';
-import { getMethodColor } from '../utils';
+import { formatUrl, getMethodColor } from '../utils';
 
 interface MockListProps {
   rules: MockRule[];
@@ -21,6 +21,19 @@ const t = (key: string, fallback: string) => {
   } catch {
     return fallback;
   }
+};
+
+// Split a mock urlPattern into a host+uri pair for two-line display, mirroring
+// the capture list. Patterns may be partial paths (e.g. "/api/foo" when the
+// rule was created from a captured request via startsWith), so fall back to
+// rendering the pattern as the uri line and leaving host blank.
+const splitPattern = (pattern: string): { host: string; uri: string } => {
+  if (!pattern) return { host: '', uri: '' };
+  if (/^https?:\/\//i.test(pattern)) {
+    const { origin, path } = formatUrl(pattern);
+    return { host: origin, uri: path || '/' };
+  }
+  return { host: '', uri: pattern };
 };
 
 export const MockList: React.FC<MockListProps> = ({
@@ -48,13 +61,18 @@ export const MockList: React.FC<MockListProps> = ({
     <div className="flex flex-col h-full">
       <div className="p-2 bg-gray-50 sticky top-0 z-10 border-b border-gray-200">
         <div className="flex items-center justify-between mb-2">
-          <button
-            onClick={onToggleGlobal}
-            className={`flex items-center px-2 py-0.5 rounded text-[10px] font-bold border shadow-sm ${globalEnabled ? 'bg-green-50 text-green-600 border-green-200' : 'bg-white text-gray-400 border-gray-200'}`}
-          >
-            <div className={`w-1.5 h-1.5 rounded-full mr-1.5 ${globalEnabled ? 'bg-green-500 animate-pulse' : 'bg-gray-300'}`} />
-            {globalEnabled ? onLabel : offLabel}
-          </button>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={onToggleGlobal}
+              title={globalEnabled ? onLabel : offLabel}
+              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors flex-shrink-0 ${globalEnabled ? 'bg-green-500' : 'bg-gray-300'}`}
+            >
+              <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${globalEnabled ? 'translate-x-5' : 'translate-x-1'}`} />
+            </button>
+            <span className={`text-[10px] font-bold uppercase tracking-wide ${globalEnabled ? 'text-green-600' : 'text-gray-400'}`}>
+              {globalEnabled ? onLabel : offLabel}
+            </span>
+          </div>
           <button
             onClick={onCreate}
             className="text-[10px] text-green-600 hover:text-green-700 font-bold uppercase flex items-center"
@@ -75,20 +93,24 @@ export const MockList: React.FC<MockListProps> = ({
           <div className="divide-y divide-gray-100">
             {rules.map(r => {
               const isActive = activeRuleId === r.id;
+              const { host, uri } = splitPattern(r.urlPattern);
               return (
                 <div
                   key={r.id}
                   onClick={() => onSelect(r)}
                   onContextMenu={(e) => { e.preventDefault(); setContextMenu({ x: e.clientX, y: e.clientY, id: r.id }); }}
+                  title={r.name || undefined}
                   className={`px-3 py-2 cursor-pointer transition-colors group relative border-l-4 ${isActive ? 'bg-indigo-50 border-indigo-600' : 'bg-transparent border-transparent hover:bg-white'}`}
                 >
-                  <div className="flex items-center justify-between mb-0.5">
+                  <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center space-x-1.5 min-w-0">
                       <button
                         onClick={(e) => { e.stopPropagation(); onToggleRule(r.id); }}
                         title={r.enabled ? 'Disable' : 'Enable'}
-                        className={`w-2 h-2 rounded-full flex-shrink-0 ${r.enabled ? 'bg-green-500' : 'bg-gray-300'}`}
-                      />
+                        className={`relative inline-flex h-3.5 w-7 items-center rounded-full transition-colors flex-shrink-0 ${r.enabled ? (globalEnabled ? 'bg-green-500' : 'bg-gray-300') : 'bg-gray-300'}`}
+                      >
+                        <span className={`inline-block h-2 w-2 transform rounded-full bg-white transition-transform ${r.enabled ? 'translate-x-4' : 'translate-x-1'}`} />
+                      </button>
                       <span className={`text-[10px] font-bold ${getMethodColor(r.method === 'ANY' ? '' : r.method)}`}>{r.method}</span>
                       <span className="text-[10px] text-gray-400 uppercase">{r.mode === 'replace' ? 'replace' : 'patch'}</span>
                     </div>
@@ -96,8 +118,20 @@ export const MockList: React.FC<MockListProps> = ({
                       {hitsLabel}: {r.hitCount || 0}
                     </span>
                   </div>
-                  <div className={`text-[11px] font-semibold truncate ${isActive ? 'text-indigo-900' : 'text-slate-800'}`}>{r.name || '(unnamed)'}</div>
-                  <div className={`text-[10px] truncate font-mono mt-0.5 ${isActive ? 'text-indigo-600/70' : 'text-slate-500'}`}>{r.urlPattern || '—'}</div>
+                  <div className="flex flex-col">
+                    <span
+                      className={`text-xs font-semibold truncate ${isActive ? 'text-indigo-900' : 'text-slate-800'} ${host ? '' : 'italic text-gray-400'}`}
+                      title={host || 'ANY'}
+                    >
+                      {host || 'ANY'}
+                    </span>
+                    <span
+                      className={`text-[10px] truncate font-mono ${isActive ? 'text-indigo-600/70' : 'text-slate-500'}`}
+                      title={uri || '—'}
+                    >
+                      {uri || '—'}
+                    </span>
+                  </div>
                 </div>
               );
             })}

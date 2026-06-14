@@ -81,7 +81,53 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         });
         return true;
     }
+
+    // Captured JSON response body from the page-side mock-injector.
+    // Best-effort match to the most recent log entry for the same url+method.
+    if (message.type === 'XAPI_RESPONSE_BODY' && message.payload) {
+        const { url, method, body, truncated } = message.payload;
+        if (typeof url !== 'string' || typeof body !== 'string') return;
+        chrome.storage.local.get(['isRecording'], (result) => {
+            if (!result.isRecording) return;
+            attachResponseBody(url, method, body, !!truncated);
+        });
+        return; // no async sendResponse
+    }
 });
+
+// Locate the most recent matching log entry (in pendingRequests first, else
+// in stored logs) and write responseBody onto it.
+const attachResponseBody = (url: string, method: string, body: string, truncated: boolean) => {
+    const m = (method || 'GET').toUpperCase();
+    // 1) Try in-memory pending requests (preferred — matches by exact request).
+    const matches = Object.values(pendingRequests).filter((p: any) =>
+        p && p.url === url && (p.method || '').toUpperCase() === m
+    ) as any[];
+    if (matches.length > 0) {
+        // Most recent wins.
+        const log = matches.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))[0];
+        log.responseBody = body;
+        if (truncated) log.responseTruncated = true;
+        saveLog(log);
+        return;
+    }
+    // 2) Fallback: patch the most recent matching entry already in storage,
+    //    bounded to the last 10s to avoid overwriting unrelated old logs.
+    chrome.storage.local.get(['logs'], (res) => {
+        const logs = (res.logs || []) as any[];
+        const now = Date.now();
+        const idx = logs.findIndex((l: any) =>
+            l && l.url === url &&
+            (l.method || '').toUpperCase() === m &&
+            now - (l.timestamp || 0) < 10_000
+        );
+        if (idx === -1) return;
+        const next = logs.slice();
+        next[idx] = { ...next[idx], responseBody: body };
+        if (truncated) next[idx].responseTruncated = true;
+        chrome.storage.local.set({ logs: next });
+    });
+};
 
 // --- Storage Queue ---
 let isSaving = false;

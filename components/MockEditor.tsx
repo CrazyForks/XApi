@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useEffect, useState } from 'react';
 import { HttpMethod, JsonPatch, LoggedRequest, MockMode, MockRule } from '../types';
 import { collectJsonPaths, createJsonPatch } from '../mockUtils';
 
@@ -66,8 +66,20 @@ export const MockEditor: React.FC<MockEditorProps> = ({ rule, history, onRuleCha
   const removePatch = (id: string) =>
     updatePatches((rule.jsonPatches || []).filter(p => p.id !== id));
 
-  const ruleEnabledLabel = t('mockRuleEnabled', 'Enabled');
-  const namePh = t('mockRuleNamePlaceholder', 'Friendly rule name');
+  // Header "select all" state for the patch table — supports indeterminate.
+  const patches = rule.jsonPatches || [];
+  const enabledCount = patches.reduce((n, p) => n + (p.enabled ? 1 : 0), 0);
+  const allEnabled = patches.length > 0 && enabledCount === patches.length;
+  const someEnabled = enabledCount > 0 && enabledCount < patches.length;
+  const selectAllRef = useRef<HTMLInputElement | null>(null);
+  useEffect(() => {
+    if (selectAllRef.current) selectAllRef.current.indeterminate = someEnabled;
+  }, [someEnabled, allEnabled]);
+  const toggleAllPatches = (enabled: boolean) => {
+    if (patches.length === 0) return;
+    updatePatches(patches.map(p => ({ ...p, enabled })));
+  };
+
   const matchTitle = t('mockMatchSection', 'Match');
   const modifyTitle = t('mockModifySection', 'Modify');
   const urlPatternLabel = t('mockUrlPattern', 'URL Pattern');
@@ -85,8 +97,9 @@ export const MockEditor: React.FC<MockEditorProps> = ({ rule, history, onRuleCha
   const addFieldLabel = t('mockAddField', 'Add field');
   const rawHint = t('mockRawValueHint', 'Use prefix "::raw::" to inject raw JSON (number/bool/null/object).');
   const noRequestSampleHint = t('mockNoSample', 'No matching capture in history yet — type the path manually.');
-  const disabledHint = t('mockDisabledHint', 'This rule is disabled and will not affect any request.');
-  const hitsLabel = t('mockHits', 'Hits');
+  const selectAllTitle = allEnabled
+    ? t('mockDeselectAll', 'Deselect all')
+    : t('mockSelectAll', 'Select all');
 
   const fillFromHistory = () => {
     if (!sampleData) return;
@@ -98,51 +111,12 @@ export const MockEditor: React.FC<MockEditorProps> = ({ rule, history, onRuleCha
   return (
     <div className="flex-1 overflow-y-auto bg-white">
       <div className="max-w-3xl mx-auto p-5 space-y-6">
-        {/* Header row: enabled + name */}
-        <div className="flex items-center space-x-3">
-          <label className="flex items-center space-x-2 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={rule.enabled}
-              onChange={e => update({ enabled: e.target.checked })}
-              className="rounded text-green-600 focus:ring-green-500 w-4 h-4"
-            />
-            <span className="text-xs font-semibold text-gray-700">{ruleEnabledLabel}</span>
-          </label>
-          <input
-            type="text"
-            value={rule.name}
-            placeholder={namePh}
-            onChange={e => update({ name: e.target.value })}
-            className="flex-1 text-sm font-semibold border border-gray-200 hover:border-gray-300 focus:border-green-500 rounded px-2 py-1.5 focus:outline-none transition-colors"
-          />
-          <span className="text-[11px] text-gray-500">
-            {hitsLabel}: <span className="font-bold text-gray-700">{rule.hitCount || 0}</span>
-          </span>
-        </div>
-
-        {!rule.enabled && (
-          <div className="px-3 py-2 bg-amber-50 border border-amber-200 rounded text-xs text-amber-700">
-            {disabledHint}
-          </div>
-        )}
-
         {/* MATCH */}
         <section>
           <SectionTitle>{matchTitle}</SectionTitle>
           <div className="space-y-2">
-            <div>
-              <div className="text-[11px] text-gray-500 mb-1">{urlPatternLabel}</div>
-              <input
-                type="text"
-                value={rule.urlPattern}
-                placeholder={urlPatternPh}
-                onChange={e => update({ urlPattern: e.target.value })}
-                className="w-full text-xs font-mono border border-gray-200 hover:border-gray-300 focus:border-green-500 rounded px-2 py-1.5 focus:outline-none transition-colors"
-              />
-            </div>
-            <div className="flex space-x-3">
-              <div className="w-40">
+            <div className="flex space-x-2">
+              <div className="w-32 flex-shrink-0">
                 <div className="text-[11px] text-gray-500 mb-1">{methodLabel}</div>
                 <select
                   value={rule.method}
@@ -151,6 +125,16 @@ export const MockEditor: React.FC<MockEditorProps> = ({ rule, history, onRuleCha
                 >
                   {METHODS.map(m => <option key={m} value={m}>{m}</option>)}
                 </select>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-[11px] text-gray-500 mb-1">{urlPatternLabel}</div>
+                <input
+                  type="text"
+                  value={rule.urlPattern}
+                  placeholder={urlPatternPh}
+                  onChange={e => update({ urlPattern: e.target.value })}
+                  className="w-full text-xs font-mono border border-gray-200 hover:border-gray-300 focus:border-green-500 rounded px-2 py-1.5 focus:outline-none transition-colors"
+                />
               </div>
             </div>
           </div>
@@ -232,7 +216,17 @@ export const MockEditor: React.FC<MockEditorProps> = ({ rule, history, onRuleCha
               <div className="text-[11px] text-gray-500">{rawHint}</div>
               <div className="border border-gray-200 rounded overflow-hidden">
                 <div className="flex bg-gray-50 text-[10px] font-bold text-gray-500 uppercase tracking-wider px-2 py-1.5 border-b border-gray-200">
-                  <div className="w-7"></div>
+                  <div className="w-7 flex justify-center">
+                    <input
+                      ref={selectAllRef}
+                      type="checkbox"
+                      title={selectAllTitle}
+                      disabled={patches.length === 0}
+                      checked={allEnabled}
+                      onChange={e => toggleAllPatches(e.target.checked)}
+                      className="rounded text-green-600 focus:ring-green-500 disabled:opacity-40"
+                    />
+                  </div>
                   <div className="flex-1 pr-2">{pathLabel}</div>
                   <div className="flex-1 pr-2">{newValueLabel}</div>
                   <div className="w-7"></div>

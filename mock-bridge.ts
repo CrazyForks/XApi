@@ -53,6 +53,26 @@ window.addEventListener('message', (e) => {
     scheduleFlush();
     return;
   }
+  if (data.type === 'response' && typeof data.url === 'string') {
+    // Forward to the service worker so it can attach the body to the matching
+    // log entry. Best-effort — silently drop if the SW is gone (extension
+    // context invalidated, page in BFCache, etc).
+    try {
+      chrome.runtime.sendMessage({
+        type: 'XAPI_RESPONSE_BODY',
+        payload: {
+          url: data.url,
+          method: data.method,
+          status: data.status,
+          contentType: data.contentType,
+          body: data.body,
+          truncated: !!data.truncated,
+          ts: data.ts || Date.now()
+        }
+      }, () => { void chrome.runtime.lastError; });
+    } catch { /* noop */ }
+    return;
+  }
   if (data.type === 'request-rules') {
     loadAndPush();
     return;

@@ -9,7 +9,7 @@ import { TabBar } from './components/TabBar';
 import { MockEditor } from './components/MockEditor';
 import { HttpRequest, HttpResponse, LoggedRequest, SidebarTab, CollectionItem, KeyValue, TabItem, MockRule } from './types';
 import { generateId, queryStringToParams, parseCurl } from './utils';
-import { createMockRule, MOCK_RULES_KEY, MOCK_GLOBAL_ENABLED_KEY } from './mockUtils';
+import { createMockRule, MOCK_RULES_KEY, MOCK_GLOBAL_ENABLED_KEY, buildPatchesFromJson } from './mockUtils';
 
 // 浏览器禁止通过 fetch 接口设置的请求头列表
 const FORBIDDEN_HEADERS = [
@@ -196,21 +196,40 @@ const App: React.FC = () => {
   };
 
   const handleMockFromLog = (log: LoggedRequest) => {
-      // Build a starter rule from a captured request: URL contains the path,
-      // replace mode, status 200, JSON content type. Body is empty until the
-      // user pastes a sample — we don't capture response bodies in storage.
+      // Build a starter rule from a captured request. Keep host+path so
+      // cross-origin patterns still match; drop the query string so the
+      // startsWith pattern survives differing query orders.
       let urlPattern = log.url;
       try {
           const u = new URL(log.url);
-          urlPattern = u.pathname || log.url;
+          urlPattern = `${u.protocol}//${u.host}${u.pathname}` || log.url;
       } catch { /* noop */ }
+
+      // If the captured response is JSON, prefer patch-json mode and pre-fill
+      // every leaf field as an enabled patch row. Falls back to replace mode
+      // for non-JSON or absent response bodies.
+      let mode: 'replace' | 'patch-json' = 'replace';
+      let jsonPatches: ReturnType<typeof buildPatchesFromJson> = [];
+      let replaceBody = '{\n  "code": 0,\n  "data": {}\n}';
+      if (log.responseBody) {
+          try {
+              const parsed = JSON.parse(log.responseBody);
+              if (parsed != null && typeof parsed === 'object') {
+                  mode = 'patch-json';
+                  jsonPatches = buildPatchesFromJson(parsed);
+                  replaceBody = JSON.stringify(parsed, null, 2);
+              }
+          } catch { /* not JSON — keep defaults */ }
+      }
+
       const r = createMockRule({
           name: urlPattern,
           urlPattern,
           matchMode: 'startsWith',
           method: (log.method?.toUpperCase() as any) || 'ANY',
-          mode: 'replace',
-          replaceBody: '{\n  "code": 0,\n  "data": {}\n}'
+          mode,
+          replaceBody,
+          jsonPatches
       });
       persistMockRules([r, ...mockRules]);
       openMockRuleInTab(r);

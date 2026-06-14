@@ -54,6 +54,9 @@ export interface LoggedRequest {
   requestHeaders?: Record<string, string>;
   requestBody?: string | Record<string, any>; // Parsed body or raw string
   responseHeaders?: Record<string, string>;
+  // Captured by mock-injector for JSON responses only (best-effort).
+  responseBody?: string;
+  responseTruncated?: boolean;
 }
 
 export type SidebarTab = 'collections' | 'history' | 'mock';
