@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { HttpResponse } from '../types';
 import { formatBytes } from '../utils';
+import { JsonTree } from './JsonTree';
 
 interface ResponseViewerProps {
   response: HttpResponse | null;
@@ -126,7 +127,7 @@ const AUTO_FORMAT_LIMIT = 200 * 1024;
 const PREVIEW_LIMIT = 512 * 1024;
 const PREVIEW_CHARS = 256 * 1024;
 
-type BodyViewMode = 'auto' | 'preview' | 'raw' | 'formatted';
+type BodyViewMode = 'auto' | 'preview' | 'raw' | 'formatted' | 'tree';
 
 const getMessage = (key: string, fallback: string) => chrome.i18n.getMessage(key) || fallback;
 
@@ -136,17 +137,23 @@ const isJsonCandidate = (body: string) => {
 };
 
 const ResponseContent = ({ body, size }: { body: string; size: number }) => {
-    const [viewMode, setViewMode] = useState<BodyViewMode>('auto');
+    const canAttemptJsonFormat = isJsonCandidate(body);
+    const canAutoFormat = canAttemptJsonFormat && body.length <= AUTO_FORMAT_LIMIT;
+    const isLarge = body.length > PREVIEW_LIMIT;
+    // Default to a folded JSON tree when the body is small enough to parse safely.
+    const defaultMode: BodyViewMode = canAutoFormat ? 'tree' : 'auto';
+
+    const [viewMode, setViewMode] = useState<BodyViewMode>(defaultMode);
     const [manualFormatted, setManualFormatted] = useState<string | null>(null);
     const [isFormatting, setIsFormatting] = useState(false);
     const [formatError, setFormatError] = useState<string | null>(null);
 
     useEffect(() => {
-        setViewMode('auto');
+        setViewMode(defaultMode);
         setManualFormatted(null);
         setIsFormatting(false);
         setFormatError(null);
-    }, [body]);
+    }, [body, defaultMode]);
 
     const largeResponseText = getMessage('largeResponsePreview', 'Large response preview');
     const showingPreviewText = getMessage('showingPreview', 'Showing a preview to keep the browser responsive.');
@@ -156,11 +163,10 @@ const ResponseContent = ({ body, size }: { body: string; size: number }) => {
     const formattingText = getMessage('formatting', 'Formatting...');
     const formatJsonText = getMessage('formatJSON', 'Format JSON');
     const invalidJsonText = getMessage('invalidJSON', 'Invalid JSON');
+    const treeViewText = getMessage('jsonTreeView', 'Tree');
+    const rawViewText = getMessage('jsonRawView', 'Raw');
 
-    const canAttemptJsonFormat = isJsonCandidate(body);
-    const canAutoFormat = canAttemptJsonFormat && body.length <= AUTO_FORMAT_LIMIT;
-    const isLarge = body.length > PREVIEW_LIMIT;
-    const shouldShowBodyTools = isLarge || (canAttemptJsonFormat && !canAutoFormat);
+    const shouldShowBodyTools = isLarge || canAttemptJsonFormat;
 
     const autoFormatted = useMemo(() => {
         if (!canAutoFormat) return null;
@@ -244,6 +250,25 @@ const ResponseContent = ({ body, size }: { body: string; size: number }) => {
                     )}
 
                     {canAttemptJsonFormat && (
+                        <div className="inline-flex rounded border border-gray-200 overflow-hidden">
+                            <button
+                                type="button"
+                                onClick={() => setViewMode('tree')}
+                                className={`px-2 py-1 ${viewMode === 'tree' ? 'bg-emerald-50 text-emerald-700 font-semibold' : 'text-gray-600 hover:bg-gray-50'}`}
+                            >
+                                {treeViewText}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setViewMode(canAutoFormat ? 'formatted' : (isLarge ? 'preview' : 'auto'))}
+                                className={`px-2 py-1 border-l border-gray-200 ${viewMode !== 'tree' ? 'bg-emerald-50 text-emerald-700 font-semibold' : 'text-gray-600 hover:bg-gray-50'}`}
+                            >
+                                {rawViewText}
+                            </button>
+                        </div>
+                    )}
+
+                    {canAttemptJsonFormat && viewMode !== 'tree' && (
                         <button
                             type="button"
                             onClick={handleFormatJson}
@@ -270,10 +295,16 @@ const ResponseContent = ({ body, size }: { body: string; size: number }) => {
                 </div>
             )}
 
-            <pre className="min-h-0 flex-1 overflow-auto whitespace-pre-wrap break-words text-xs font-mono text-gray-800 select-text">
-                {content}
-                {isPreviewing && body.length > previewContent.length ? '\n\n...' : ''}
-            </pre>
+            {viewMode === 'tree' ? (
+                <div className="min-h-0 flex-1 overflow-auto">
+                    <JsonTree value={body} className="select-text" />
+                </div>
+            ) : (
+                <pre className="min-h-0 flex-1 overflow-auto whitespace-pre-wrap break-words text-xs font-mono text-gray-800 select-text">
+                    {content}
+                    {isPreviewing && body.length > previewContent.length ? '\n\n...' : ''}
+                </pre>
+            )}
         </div>
     );
 };

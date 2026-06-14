@@ -1,6 +1,7 @@
 import React, { useMemo, useRef, useEffect, useState } from 'react';
 import { HttpMethod, JsonPatch, LoggedRequest, MockMode, MockRule } from '../types';
 import { collectJsonPaths, createJsonPatch } from '../mockUtils';
+import { JsonTree } from './JsonTree';
 
 interface MockEditorProps {
   rule: MockRule;
@@ -37,6 +38,7 @@ const tryFormatJson = (s: string): { ok: boolean; pretty?: string; error?: strin
 
 export const MockEditor: React.FC<MockEditorProps> = ({ rule, history, onRuleChange }) => {
   const update = (partial: Partial<MockRule>) => onRuleChange({ ...rule, ...partial });
+  const [bodyView, setBodyView] = useState<'edit' | 'preview'>('edit');
 
   // Find sample real responses for this URL pattern (best-effort).
   const sampleData = useMemo(() => {
@@ -177,7 +179,7 @@ export const MockEditor: React.FC<MockEditorProps> = ({ rule, history, onRuleCha
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <div className="text-[11px] text-gray-500">{bodyLabel}</div>
-                  <div className="space-x-2">
+                  <div className="space-x-2 flex items-center">
                     {sampleData && (
                       <button
                         onClick={fillFromHistory}
@@ -195,15 +197,38 @@ export const MockEditor: React.FC<MockEditorProps> = ({ rule, history, onRuleCha
                     >
                       {formatBtn}
                     </button>
+                    <div className="inline-flex rounded border border-gray-200 overflow-hidden text-[10px]">
+                      <button
+                        type="button"
+                        onClick={() => setBodyView('edit')}
+                        className={`px-2 py-0.5 ${bodyView === 'edit' ? 'bg-emerald-50 text-emerald-700 font-semibold' : 'text-gray-500 hover:bg-gray-50'}`}
+                      >
+                        {t('jsonEditView', 'Edit')}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setBodyView('preview')}
+                        disabled={!jsonHint.ok}
+                        className={`px-2 py-0.5 border-l border-gray-200 disabled:opacity-40 disabled:cursor-not-allowed ${bodyView === 'preview' && jsonHint.ok ? 'bg-emerald-50 text-emerald-700 font-semibold' : 'text-gray-500 hover:bg-gray-50'}`}
+                      >
+                        {t('jsonTreeView', 'Tree')}
+                      </button>
+                    </div>
                   </div>
                 </div>
-                <textarea
-                  value={rule.replaceBody ?? ''}
-                  onChange={e => update({ replaceBody: e.target.value })}
-                  rows={12}
-                  className={`w-full font-mono text-xs border rounded p-2 focus:outline-none transition-colors ${jsonHint.ok ? 'border-gray-200 focus:border-green-500' : 'border-red-300 focus:border-red-500'}`}
-                  placeholder={'{ "code": 0, "data": {} }'}
-                />
+                {bodyView === 'preview' && jsonHint.ok ? (
+                  <div className="w-full min-h-[180px] border border-gray-200 rounded p-2 bg-gray-50 overflow-auto">
+                    <JsonTree value={rule.replaceBody || ''} />
+                  </div>
+                ) : (
+                  <textarea
+                    value={rule.replaceBody ?? ''}
+                    onChange={e => update({ replaceBody: e.target.value })}
+                    rows={12}
+                    className={`w-full font-mono text-xs border rounded p-2 focus:outline-none transition-colors ${jsonHint.ok ? 'border-gray-200 focus:border-green-500' : 'border-red-300 focus:border-red-500'}`}
+                    placeholder={'{ "code": 0, "data": {} }'}
+                  />
+                )}
                 {!jsonHint.ok && (rule.replaceContentType || '').includes('json') && (
                   <div className="text-[10px] text-red-600 mt-1">⚠ {jsonHint.error}</div>
                 )}

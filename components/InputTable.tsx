@@ -131,13 +131,36 @@ const InputTableRow: React.FC<{
     );
 };
 
+// A row counts as "real" once it has a key — the auto-appended trailing empty
+// row should not influence select-all state or be batch-toggled.
+const isRealRow = (item: KeyValue) => !!(item.key && item.key.length > 0);
+
 export const InputTable: React.FC<InputTableProps> = ({ items, onChange, title, hideTitle, withTypeSelector = false }) => {
-  
+
   React.useEffect(() => {
     if (items.length === 0) {
       onChange([{ id: generateId(), key: '', value: '', enabled: true, type: 'text' }]);
     }
   }, [items.length]);
+
+  // Select-all state across the "real" rows (rows with a non-empty key).
+  const realRows = items.filter(isRealRow);
+  const enabledRealCount = realRows.reduce((n, r) => n + (r.enabled ? 1 : 0), 0);
+  const allEnabled = realRows.length > 0 && enabledRealCount === realRows.length;
+  const someEnabled = enabledRealCount > 0 && enabledRealCount < realRows.length;
+  const selectAllRef = useRef<HTMLInputElement | null>(null);
+  useEffect(() => {
+    if (selectAllRef.current) selectAllRef.current.indeterminate = someEnabled;
+  }, [someEnabled, allEnabled]);
+  const handleToggleAll = () => {
+    if (realRows.length === 0) return;
+    const next = !allEnabled;
+    onChange(items.map(it => isRealRow(it) ? { ...it, enabled: next } : it));
+  };
+
+  const selectAllTitle = allEnabled
+    ? (chrome.i18n.getMessage("mockDeselectAll") || 'Deselect all')
+    : (chrome.i18n.getMessage("mockSelectAll") || 'Select all');
 
   const handleChange = (id: string, field: keyof KeyValue, val: any) => {
     const newItems = items.map(item => 
@@ -186,7 +209,17 @@ export const InputTable: React.FC<InputTableProps> = ({ items, onChange, title, 
       
       {/* Header */}
       <div className="flex border-b border-gray-200 pb-1 mb-1 text-xs font-semibold text-gray-500">
-        <div className="w-8 text-center"></div>
+        <div className="w-8 flex justify-center">
+          <input
+            ref={selectAllRef}
+            type="checkbox"
+            title={selectAllTitle}
+            disabled={realRows.length === 0}
+            checked={allEnabled}
+            onChange={handleToggleAll}
+            className="rounded text-green-600 focus:ring-green-500 disabled:opacity-40 cursor-pointer"
+          />
+        </div>
         <div className="flex-1 px-1">{keyText}</div>
         <div className="flex-1 px-1">{valueText}</div>
         <div className="w-8"></div>

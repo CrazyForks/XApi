@@ -526,5 +526,29 @@
   "mockDeselectAll": {
     "message": "取消全选",
     "description": "JSON Patch 表头复选框（已全选时）的提示"
+  },
+  "jsonTreeView": {
+    "message": "树视图",
+    "description": "可折叠 JSON 预览的切换按钮文案"
+  },
+  "jsonRawView": {
+    "message": "原文",
+    "description": "纯文本 JSON 视图切换按钮文案"
+  },
+  "jsonEditView": {
+    "message": "编辑",
+    "description": "JSON 编辑/预览切换中的编辑按钮文案"
+  },
+  "jsonExpandAll": {
+    "message": "全部展开",
+    "description": "JSON 树形视图：展开所有节点"
+  },
+  "jsonCollapseAll": {
+    "message": "全部折叠",
+    "description": "JSON 树形视图：折叠所有节点"
+  },
+  "jsonTreeTooLarge": {
+    "message": "树形数据过大，仅渲染前若干节点。",
+    "description": "JSON 树形视图节点数到达上限时的提示"
   }
 }

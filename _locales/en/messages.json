@@ -526,5 +526,29 @@
   "mockDeselectAll": {
     "message": "Deselect all",
     "description": "Tooltip for the patch-table header checkbox when all rows are enabled"
+  },
+  "jsonTreeView": {
+    "message": "Tree",
+    "description": "Toggle button label for the foldable JSON tree view"
+  },
+  "jsonRawView": {
+    "message": "Raw",
+    "description": "Toggle button label for the plain-text JSON view"
+  },
+  "jsonEditView": {
+    "message": "Edit",
+    "description": "Toggle button label for the editable textarea (paired with the tree preview)"
+  },
+  "jsonExpandAll": {
+    "message": "Expand all",
+    "description": "Button to expand every node in the JSON tree"
+  },
+  "jsonCollapseAll": {
+    "message": "Collapse all",
+    "description": "Button to collapse every node in the JSON tree"
+  },
+  "jsonTreeTooLarge": {
+    "message": "Tree too large to render fully — showing first nodes only.",
+    "description": "Notice shown when JSON tree hits the rendering cap"
   }
 }

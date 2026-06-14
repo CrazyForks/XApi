@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { HttpRequest, KeyValue } from '../types';
 import { InputTable } from './InputTable';
+import { JsonTree } from './JsonTree';
 import { paramsToQueryString } from '../utils';
 
 interface RequestEditorProps {
@@ -67,6 +68,7 @@ const BodySyntaxSelect = ({
 export const RequestEditor: React.FC<RequestEditorProps> = ({ request, onRequestChange }) => {
   const [activeTab, setActiveTab] = useState<'params' | 'headers' | 'body' | 'auth'>('params');
   const [bodyType, setBodyType] = useState<HttpRequest['bodyType']>(request.bodyType || 'none');
+  const [rawBodyView, setRawBodyView] = useState<'edit' | 'preview'>('edit');
 
   // 获取国际化文本
   const paramsText = chrome.i18n.getMessage("params");
@@ -202,26 +204,50 @@ export const RequestEditor: React.FC<RequestEditorProps> = ({ request, onRequest
                  {bodyType === 'raw' && (
                    <div className="h-full flex flex-col">
                        <div className="flex justify-between mb-1 items-center">
-                           <div className="flex space-x-2">
-                                <button 
+                           <div className="flex space-x-2 items-center">
+                                <button
                                     onClick={handleFormatJSON}
                                     className="text-[10px] bg-gray-100 hover:bg-gray-200 text-gray-600 px-2 py-1 rounded border border-gray-200 transition-colors"
                                 >
                                     {formatJSONText}
                                 </button>
+                                {(request.bodyRawType || jsonText) === jsonText && (
+                                    <div className="inline-flex rounded border border-gray-200 overflow-hidden text-[10px]">
+                                        <button
+                                            type="button"
+                                            onClick={() => setRawBodyView('edit')}
+                                            className={`px-2 py-1 ${rawBodyView === 'edit' ? 'bg-emerald-50 text-emerald-700 font-semibold' : 'text-gray-500 hover:bg-gray-50'}`}
+                                        >
+                                            {chrome.i18n.getMessage('jsonEditView') || 'Edit'}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setRawBodyView('preview')}
+                                            className={`px-2 py-1 border-l border-gray-200 ${rawBodyView === 'preview' ? 'bg-emerald-50 text-emerald-700 font-semibold' : 'text-gray-500 hover:bg-gray-50'}`}
+                                        >
+                                            {chrome.i18n.getMessage('jsonTreeView') || 'Tree'}
+                                        </button>
+                                    </div>
+                                )}
                            </div>
-                           
-                           <BodySyntaxSelect 
+
+                           <BodySyntaxSelect
                                 value={request.bodyRawType || jsonText}
                                 onChange={(val) => onRequestChange({ ...request, bodyRawType: val })}
                            />
                        </div>
-                       <textarea
-                         value={request.bodyRaw}
-                         onChange={(e) => onRequestChange({ ...request, bodyRaw: e.target.value })}
-                         className="flex-1 w-full bg-gray-50 focus:bg-white border border-gray-200 rounded p-3 font-mono text-xs resize-none focus:outline-none focus:border-green-500 transition-colors placeholder-gray-400"
-                         placeholder={enterRequestBodyText}
-                       />
+                       {rawBodyView === 'preview' && (request.bodyRawType || jsonText) === jsonText ? (
+                           <div className="flex-1 w-full bg-gray-50 border border-gray-200 rounded p-2 overflow-auto">
+                               <JsonTree value={request.bodyRaw || ''} />
+                           </div>
+                       ) : (
+                           <textarea
+                             value={request.bodyRaw}
+                             onChange={(e) => onRequestChange({ ...request, bodyRaw: e.target.value })}
+                             className="flex-1 w-full bg-gray-50 focus:bg-white border border-gray-200 rounded p-3 font-mono text-xs resize-none focus:outline-none focus:border-green-500 transition-colors placeholder-gray-400"
+                             placeholder={enterRequestBodyText}
+                           />
+                       )}
                    </div>
                  )}
              </div>
