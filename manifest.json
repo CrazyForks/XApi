@@ -1,8 +1,7 @@
-
 {
   "manifest_version": 3,
   "name": "XApi HTTP Client - Api Testing Tool",
-  "version": "2.1.0",
+  "version": "3.1.0",
   "description": "Intercept, debug & replay HTTP requests. A comprehensive API client with collections and cURL support inside Chrome DevTools.",
   "default_locale": "en",
   "permissions": [
@@ -13,9 +12,7 @@
     "declarativeNetRequestFeedback",
     "scripting"
   ],
-  "host_permissions": [
-    "<all_urls>"
-  ],
+  "host_permissions": ["<all_urls>"],
   "icons": {
     "16": "icons/icon-16.png",
     "32": "icons/icon-32.png",

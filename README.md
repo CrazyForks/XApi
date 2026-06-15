@@ -27,6 +27,13 @@ https://github.com/user-attachments/assets/490f58f6-b000-49de-80e1-702669052b55
 - **📂 Collection Management**: Organize your workspace with nested collections and persistent storage.
 - **🔄 Smart Replay**: One-click "Send" to replay captured requests with modified parameters or headers.
 - **📥 cURL Integration**: Paste raw cURL commands to instantly generate fully editable request objects.
+- **🎭 Mock & Response Override**: Intercept live requests and serve custom responses without touching the backend — ideal for front-end development, edge-case testing, and reproducing bugs.
+  - **URL Matching**: Rules match by URL prefix (`startsWith`) and HTTP method (`GET`/`POST`/`PUT`/`DELETE`/`ANY`).
+  - **Two Modes**:
+    - **Replace** — fully override the response with a custom status code, `Content-Type`, and body (JSON, text, HTML, etc.).
+    - **JSON Patch** — keep the original response and surgically modify specific fields via JSON paths (e.g. `data.user.name`, `data.list[0].id`); use the `::raw::` prefix to inject numbers, booleans, `null`, or nested JSON.
+  - **One-click Mock from Capture**: Right-click any captured response and choose *"Mock this response"* to auto-generate a rule pre-filled with the current payload — start tweaking immediately.
+  - **Per-Rule Toggle & Global Switch**: Enable/disable individual rules or flip the global mock master switch from the sidebar; hit counters and last-hit timestamps help you verify rules are firing.
 
 ---
 
@@ -67,6 +74,15 @@ If you prefer to build the extension manually for development purposes:
 2.  Switch to the **XApi** tab.
 3.  Interactions on the current page will appear in the **Captured** history.
 4.  Select any request to edit its body, headers, or query params and hit **SEND**.
+
+#### Mocking a Response
+
+1.  Open the **Mock** tab in the sidebar and make sure the global mock switch is **ON**.
+2.  Click **New Rule** to define one from scratch, or right-click a captured response and pick **"Mock this response"** to seed a rule from the live payload.
+3.  Set the **URL pattern** (prefix match) and **method**, then choose a mode:
+    - **Replace** — write the full status / `Content-Type` / body you want returned.
+    - **JSON Patch** — add patch rows like `data.user.name = Alice`. Prefix with `::raw::` to inject non-string JSON values, e.g. `::raw::42`, `::raw::true`, `::raw::{"k":1}`.
+4.  Reload the page or trigger the request — the rule's **hit counter** confirms it fired.
 
 ---
 
