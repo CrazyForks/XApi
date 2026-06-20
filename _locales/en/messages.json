@@ -546,5 +546,21 @@
   "jsonTreeTooLarge": {
     "message": "Tree too large to render fully — showing first nodes only.",
     "description": "Notice shown when JSON tree hits the rendering cap"
+  },
+  "language": {
+    "message": "Language",
+    "description": "Settings label for language selection"
+  },
+  "systemLanguage": {
+    "message": "System",
+    "description": "Language option that follows the browser language"
+  },
+  "english": {
+    "message": "English",
+    "description": "English language option"
+  },
+  "chineseSimplified": {
+    "message": "Simplified Chinese",
+    "description": "Simplified Chinese language option"
   }
 }

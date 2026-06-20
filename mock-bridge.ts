@@ -21,7 +21,7 @@ const loadAndPush = () => {
     chrome.storage.local.get([MOCK_RULES_KEY, MOCK_GLOBAL_ENABLED_KEY], (result) => {
       if (chrome.runtime.lastError) return;
       const rules = result[MOCK_RULES_KEY] || [];
-      const enabled = result[MOCK_GLOBAL_ENABLED_KEY] !== false; // default ON
+      const enabled = result[MOCK_GLOBAL_ENABLED_KEY] === true; // default OFF
       sendRulesToMainWorld(enabled, rules);
     });
   } catch { /* extension context invalidated */ }

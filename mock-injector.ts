@@ -47,7 +47,7 @@ interface State {
 
 const TAG = '[XApi-Mock]';
 const MSG_TAG = 'xapi-mock';
-const state: State = { enabled: true, rules: [] };
+const state: State = { enabled: false, rules: [] };
 
 // ----- bridge ------
 window.addEventListener('message', (e) => {

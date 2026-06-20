@@ -2,19 +2,20 @@
 import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
+import { applyLanguage, LANGUAGE_STORAGE_KEY } from './i18n';
 import { LoggedRequest } from './types';
 import { formatUrl, formatTime, getMethodBadgeColor } from './utils';
 import { Logo } from './components/Logo';
 
-// Shared with App.tsx and mock-bridge.ts. Default ON when the value is missing
-// (i.e. `result[KEY] !== false`), matching how the panel and content script read it.
+// Shared with App.tsx and mock-bridge.ts. Default OFF when the value is missing.
 const MOCK_GLOBAL_ENABLED_KEY = 'mockGlobalEnabled';
 
 const Popup = () => {
   const [isRecording, setIsRecording] = useState(false);
-  const [mockGlobalEnabled, setMockGlobalEnabled] = useState(true);
+  const [mockGlobalEnabled, setMockGlobalEnabled] = useState(false);
   const [logs, setLogs] = useState<LoggedRequest[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [languageVersion, setLanguageVersion] = useState(0);
 
   // 获取国际化文本
   const startRecordingText = chrome.i18n.getMessage("startRecording");
@@ -31,9 +32,14 @@ const Popup = () => {
   useEffect(() => {
     // Load initial state
     if (chrome.storage && chrome.storage.local) {
-      chrome.storage.local.get(['isRecording', 'logs', MOCK_GLOBAL_ENABLED_KEY], (result) => {
+      chrome.storage.local.get(['isRecording', 'logs', MOCK_GLOBAL_ENABLED_KEY, LANGUAGE_STORAGE_KEY], (result) => {
+        const storedLanguage = result[LANGUAGE_STORAGE_KEY];
+        if (storedLanguage === 'en' || storedLanguage === 'zh_CN') {
+          applyLanguage(storedLanguage);
+          setLanguageVersion(v => v + 1);
+        }
         setIsRecording(!!result.isRecording);
-        setMockGlobalEnabled(result[MOCK_GLOBAL_ENABLED_KEY] !== false);
+        setMockGlobalEnabled(result[MOCK_GLOBAL_ENABLED_KEY] === true);
         setLogs(result.logs || []);
       });
 
@@ -45,7 +51,12 @@ const Popup = () => {
             setIsRecording(changes.isRecording.newValue);
          }
          if (changes[MOCK_GLOBAL_ENABLED_KEY]) {
-            setMockGlobalEnabled(changes[MOCK_GLOBAL_ENABLED_KEY].newValue !== false);
+            setMockGlobalEnabled(changes[MOCK_GLOBAL_ENABLED_KEY].newValue === true);
+         }
+         if (changes[LANGUAGE_STORAGE_KEY]) {
+            const nextLanguage = changes[LANGUAGE_STORAGE_KEY].newValue;
+            applyLanguage(nextLanguage === 'en' || nextLanguage === 'zh_CN' ? nextLanguage : 'system');
+            setLanguageVersion(v => v + 1);
          }
       };
       chrome.storage.onChanged.addListener(listener);
@@ -85,7 +96,7 @@ const Popup = () => {
   });
 
   return (
-    <div className="w-80 bg-white flex flex-col h-[500px]">
+    <div key={languageVersion} className="w-80 bg-white flex flex-col h-[500px]">
       {/* Header */}
       <div className="px-4 py-3 bg-gray-900 text-white flex justify-between items-center shadow-md flex-shrink-0">
          <Logo size={18} textColor="text-white" />

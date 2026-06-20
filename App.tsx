@@ -10,6 +10,8 @@ import { MockEditor } from './components/MockEditor';
 import { HttpRequest, HttpResponse, LoggedRequest, SidebarTab, CollectionItem, KeyValue, TabItem, MockRule } from './types';
 import { generateId, queryStringToParams, parseCurl } from './utils';
 import { createMockRule, MOCK_RULES_KEY, MOCK_GLOBAL_ENABLED_KEY, buildPatchesFromJson } from './mockUtils';
+import { applyLanguage, LANGUAGE_STORAGE_KEY } from './i18n';
+import type { AppLanguage } from './i18n';
 
 // 浏览器禁止通过 fetch 接口设置的请求头列表
 const FORBIDDEN_HEADERS = [
@@ -75,7 +77,9 @@ const App: React.FC = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [curlInput, setCurlInput] = useState('');
   const [mockRules, setMockRules] = useState<MockRule[]>([]);
-  const [mockGlobalEnabled, setMockGlobalEnabled] = useState(true);
+  const [mockGlobalEnabled, setMockGlobalEnabled] = useState(false);
+  const [language, setLanguage] = useState<AppLanguage>('system');
+  const [languageVersion, setLanguageVersion] = useState(0);
   const initializedRef = useRef(false);
 
   const activeTab = tabs.find(t => t.id === activeTabId);
@@ -85,20 +89,31 @@ const App: React.FC = () => {
   const activeError = activeTab?.error || null;
   const activeIsLoading = activeTab?.isLoading || false;
 
+  const refreshLanguage = (next: AppLanguage) => {
+      applyLanguage(next);
+      setLanguage(next);
+      setLanguageVersion(v => v + 1);
+      setTabs(prev => prev.map(t => t.type === 'welcome' ? { ...t, title: chrome.i18n.getMessage("welcomeTabTitle") } : t));
+  };
+
   useEffect(() => {
     if (chrome && chrome.storage && chrome.storage.local) {
-      chrome.storage.local.get(['collections', 'logs', 'savedTabs', 'savedActiveTabId', 'isRecording', 'rootRequests', MOCK_RULES_KEY, MOCK_GLOBAL_ENABLED_KEY], (result) => {
+      chrome.storage.local.get(['collections', 'logs', 'savedTabs', 'savedActiveTabId', 'isRecording', 'rootRequests', MOCK_RULES_KEY, MOCK_GLOBAL_ENABLED_KEY, LANGUAGE_STORAGE_KEY], (result) => {
         if (result.collections) setCollections(result.collections);
         if (result.rootRequests) setRootRequests(result.rootRequests);
         setIsRecording(!!result.isRecording);
         if (result[MOCK_RULES_KEY]) setMockRules(result[MOCK_RULES_KEY]);
-        setMockGlobalEnabled(result[MOCK_GLOBAL_ENABLED_KEY] !== false);
-        
+        setMockGlobalEnabled(result[MOCK_GLOBAL_ENABLED_KEY] === true);
+        const storedLanguage = result[LANGUAGE_STORAGE_KEY];
+        if (storedLanguage === 'en' || storedLanguage === 'zh_CN') {
+          refreshLanguage(storedLanguage);
+        }
+
         const logs = result.logs || [];
         setHistory(logs);
 
         if (result.savedTabs && result.savedTabs.length > 0) {
-            setTabs(result.savedTabs);
+            setTabs(result.savedTabs.map((t: TabItem) => t.type === 'welcome' ? { ...t, title: chrome.i18n.getMessage("welcomeTabTitle") } : t));
             if (result.savedActiveTabId) setActiveTabId(result.savedActiveTabId);
         }
 
@@ -120,7 +135,12 @@ const App: React.FC = () => {
         if (changes.rootRequests) setRootRequests(changes.rootRequests.newValue || []);
         if (changes.isRecording) setIsRecording(changes.isRecording.newValue);
         if (changes[MOCK_RULES_KEY]) setMockRules(changes[MOCK_RULES_KEY].newValue || []);
-        if (changes[MOCK_GLOBAL_ENABLED_KEY]) setMockGlobalEnabled(changes[MOCK_GLOBAL_ENABLED_KEY].newValue !== false);
+        if (changes[MOCK_GLOBAL_ENABLED_KEY]) setMockGlobalEnabled(changes[MOCK_GLOBAL_ENABLED_KEY].newValue === true);
+        if (changes[LANGUAGE_STORAGE_KEY]) {
+          const nextLanguage = changes[LANGUAGE_STORAGE_KEY].newValue;
+          const normalized = nextLanguage === 'en' || nextLanguage === 'zh_CN' ? nextLanguage : 'system';
+          refreshLanguage(normalized);
+        }
       };
       chrome.storage.onChanged.addListener(listener);
       return () => chrome.storage.onChanged.removeListener(listener);
@@ -193,6 +213,11 @@ const App: React.FC = () => {
       const next = !mockGlobalEnabled;
       setMockGlobalEnabled(next);
       chrome.storage.local.set({ [MOCK_GLOBAL_ENABLED_KEY]: next });
+  };
+
+  const handleLanguageChange = (next: AppLanguage) => {
+      refreshLanguage(next);
+      chrome.storage.local.set({ [LANGUAGE_STORAGE_KEY]: next });
   };
 
   const handleMockFromLog = (log: LoggedRequest) => {
@@ -492,6 +517,8 @@ const App: React.FC = () => {
           onToggleRecording={() => { setIsRecording(!isRecording); chrome.storage.local.set({ isRecording: !isRecording }); }}
           onCollapseSidebar={() => setIsSidebarCollapsed(true)}
           onResetAllData={handleClearAllData}
+          language={language}
+          onLanguageChange={handleLanguageChange}
           mockRules={mockRules}
           mockGlobalEnabled={mockGlobalEnabled}
           onSelectMockRule={openMockRuleInTab}
@@ -503,7 +530,7 @@ const App: React.FC = () => {
           onMockFromLog={handleMockFromLog}
         />
       )}
-      <div className="flex-1 flex flex-col min-w-0 bg-white relative">
+      <div key={languageVersion} className="flex-1 flex flex-col min-w-0 bg-white relative">
          {isSidebarCollapsed && (
              <button 
                 onClick={() => setIsSidebarCollapsed(false)}

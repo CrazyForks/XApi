@@ -546,5 +546,21 @@
   "jsonTreeTooLarge": {
     "message": "树形数据过大，仅渲染前若干节点。",
     "description": "JSON 树形视图节点数到达上限时的提示"
+  },
+  "language": {
+    "message": "语言",
+    "description": "设置中的语言选择标签"
+  },
+  "systemLanguage": {
+    "message": "跟随系统",
+    "description": "跟随浏览器语言的语言选项"
+  },
+  "english": {
+    "message": "English",
+    "description": "英文语言选项"
+  },
+  "chineseSimplified": {
+    "message": "简体中文",
+    "description": "简体中文语言选项"
   }
 }
