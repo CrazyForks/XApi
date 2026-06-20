@@ -108,7 +108,7 @@ const Popup = () => {
              >
                 <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${mockGlobalEnabled ? 'translate-x-12' : 'translate-x-1'}`} />
                 <span className={`absolute text-[9px] font-bold uppercase tracking-wide text-white pointer-events-none ${mockGlobalEnabled ? 'left-1.5' : 'right-1.5'}`}>
-                   Mock
+                   {chrome.i18n.getMessage("mockTab") || 'Mock'}
                 </span>
              </button>
              <button

@@ -49,8 +49,8 @@ export const MockList: React.FC<MockListProps> = ({
     return () => document.removeEventListener('click', close);
   }, []);
 
-  const onLabel = t('mockGlobalOn', 'MOCK ON');
-  const offLabel = t('mockGlobalOff', 'MOCK OFF');
+  const activeLabel = t('mockGlobalActive', 'ACTIVATING');
+  const pausedLabel = t('paused', 'Paused');
   const newRuleText = t('mockNewRule', 'New Rule');
   const emptyText = t('mockListEmpty', 'No mock rules yet');
   const emptyHintText = t('mockListEmptyHint', 'Right-click a captured request → "Mock this" to start fast.');
@@ -66,14 +66,12 @@ export const MockList: React.FC<MockListProps> = ({
           <div className="flex items-center space-x-2">
             <button
               onClick={onToggleGlobal}
-              title={globalEnabled ? onLabel : offLabel}
-              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors flex-shrink-0 ${globalEnabled ? 'bg-green-500' : 'bg-gray-300'}`}
+              title={globalEnabled ? activeLabel : pausedLabel}
+              className={`flex items-center px-2 py-0.5 rounded text-[10px] font-bold border shadow-sm ${globalEnabled ? 'bg-red-50 text-red-600 border-red-200' : 'bg-white text-gray-400 border-gray-200'}`}
             >
-              <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${globalEnabled ? 'translate-x-5' : 'translate-x-1'}`} />
+              <div className={`w-1.5 h-1.5 rounded-full mr-1.5 ${globalEnabled ? 'bg-red-500 animate-pulse' : 'bg-gray-300'}`} />
+              {globalEnabled ? activeLabel : pausedLabel}
             </button>
-            <span className={`text-[10px] font-bold uppercase tracking-wide ${globalEnabled ? 'text-green-600' : 'text-gray-400'}`}>
-              {globalEnabled ? onLabel : offLabel}
-            </span>
           </div>
           <div className="flex items-center space-x-2">
             {rules.length > 0 && (
@@ -106,6 +104,8 @@ export const MockList: React.FC<MockListProps> = ({
             {rules.map(r => {
               const isActive = activeRuleId === r.id;
               const { host, uri } = splitPattern(r.urlPattern);
+              const ruleActivating = globalEnabled && r.enabled;
+              const rulePausedByGlobal = !globalEnabled && r.enabled;
               return (
                 <div
                   key={r.id}
@@ -118,10 +118,10 @@ export const MockList: React.FC<MockListProps> = ({
                     <div className="flex items-center space-x-1.5 min-w-0">
                       <button
                         onClick={(e) => { e.stopPropagation(); onToggleRule(r.id); }}
-                        title={r.enabled ? 'Disable' : 'Enable'}
-                        className={`relative inline-flex h-3.5 w-7 items-center rounded-full transition-colors flex-shrink-0 ${r.enabled ? (globalEnabled ? 'bg-green-500' : 'bg-gray-300') : 'bg-gray-300'}`}
+                        title={r.enabled ? (globalEnabled ? 'Disable' : 'Paused') : 'Enable'}
+                        className={`flex h-3.5 w-3.5 items-center justify-center rounded-full flex-shrink-0 transition-colors ${r.enabled ? 'bg-red-50' : 'bg-transparent'}`}
                       >
-                        <span className={`inline-block h-2 w-2 transform rounded-full bg-white transition-transform ${r.enabled ? 'translate-x-4' : 'translate-x-1'}`} />
+                        <span className={`h-1.5 w-1.5 rounded-full transition-all ${ruleActivating ? 'bg-red-500 animate-pulse shadow-[0_0_0_2px_rgba(239,68,68,0.16)]' : rulePausedByGlobal ? 'bg-red-300' : 'bg-gray-300'}`} />
                       </button>
                       <span className={`text-[10px] font-bold ${getMethodColor(r.method === 'ANY' ? '' : r.method)}`}>{r.method}</span>
                       <span className="text-[10px] text-gray-400 uppercase">{r.mode === 'replace' ? 'replace' : 'patch'}</span>

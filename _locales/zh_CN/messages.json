@@ -404,27 +404,31 @@
     "description": "待定状态文字"
   },
   "mockTab": {
-    "message": "Mock",
+    "message": "挡板",
     "description": "侧边栏 Mock 标签"
   },
   "mockGlobalOn": {
-    "message": "MOCK 已开启",
+    "message": "生效中",
     "description": "Mock 全局开关开启时的提示"
   },
   "mockGlobalOff": {
-    "message": "MOCK 已关闭",
+    "message": "已暂停",
     "description": "Mock 全局开关关闭时的提示"
+  },
+  "mockGlobalActive": {
+    "message": "生效中",
+    "description": "Mock 全局开关生效状态标签"
   },
   "mockNewRule": {
     "message": "新建规则",
     "description": "新建 Mock 规则按钮"
   },
   "mockListEmpty": {
-    "message": "暂无 Mock 规则",
+    "message": "暂无挡板规则",
     "description": "Mock 规则列表为空时的提示"
   },
   "mockListEmptyHint": {
-    "message": "在已捕获请求上右键 → \"Mock 此响应\" 即可快速开始。",
+    "message": "在已捕获请求上右键 → \"为此响应创建挡板\" 即可快速开始。",
     "description": "Mock 规则列表为空时的提示文案"
   },
   "mockHits": {
@@ -432,11 +436,11 @@
     "description": "Mock 规则命中次数标签"
   },
   "mockThis": {
-    "message": "Mock 此响应",
+    "message": "为此响应创建挡板",
     "description": "在捕获请求右键菜单中创建 Mock 规则"
   },
   "clearMockRulesConfirm": {
-    "message": "确定要清空所有 Mock 规则吗？此操作无法撤销。",
+    "message": "确定要清空所有挡板规则吗？此操作无法撤销。",
     "description": "清空所有 Mock 规则时的确认消息"
   },
   "mockRuleEnabled": {

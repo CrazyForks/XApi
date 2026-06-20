@@ -408,12 +408,16 @@
     "description": "Sidebar tab label for mock rules"
   },
   "mockGlobalOn": {
-    "message": "MOCK ON",
+    "message": "ACTIVATING",
     "description": "Label when mock global switch is on"
   },
   "mockGlobalOff": {
-    "message": "MOCK OFF",
+    "message": "Paused",
     "description": "Label when mock global switch is off"
+  },
+  "mockGlobalActive": {
+    "message": "ACTIVATING",
+    "description": "Status label when the mock global switch is active"
   },
   "mockNewRule": {
     "message": "New Rule",

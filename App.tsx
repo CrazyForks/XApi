@@ -508,7 +508,19 @@ const App: React.FC = () => {
           onCreateCollection={() => { const newCol = { id: generateId(), name: chrome.i18n.getMessage("newCollection"), requests: [], collapsed: false }; const next = [...collections, newCol]; setCollections(next); chrome.storage.local.set({ collections: next }); setSidebarTab('collections'); }}
           onCreateRequest={handleCreateRequest}
           onImportCurl={() => setIsCurlModalOpen(true)}
-          onClearHistory={() => { setHistory([]); chrome.storage.local.set({ logs: [] }); }}
+          onClearHistory={() => {
+              const capturedIds = new Set(history.map(h => h.id));
+              setHistory([]);
+              chrome.storage.local.set({ logs: [] });
+              const nextTabs = tabs.filter(t => t.type !== 'request' || !capturedIds.has(t.id));
+              if (nextTabs.length === 0) {
+                  setTabs([{ id: 'welcome', type: 'welcome', title: chrome.i18n.getMessage("welcomeTabTitle") }]);
+                  setActiveTabId('welcome');
+              } else {
+                  setTabs(nextTabs);
+                  if (!nextTabs.find(t => t.id === activeTabId)) setActiveTabId(nextTabs[nextTabs.length - 1].id);
+              }
+          }}
           onDeleteLog={(id) => { const next = history.filter(h => h.id !== id); setHistory(next); chrome.storage.local.set({ logs: next }); handleTabClose(id); }}
           onRenameCollection={(id, name) => { const next = collections.map(c => c.id === id ? { ...c, name } : c); setCollections(next); chrome.storage.local.set({ collections: next }); }}
           onRenameRequest={handleRenameRequest}
