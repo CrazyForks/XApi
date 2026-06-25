@@ -107,7 +107,7 @@ export const MockList: React.FC<MockListProps> = ({
             <div className="text-[10px] text-gray-400 italic">{emptyHintText}</div>
           </div>
         ) : (
-          <div className="divide-y divide-gray-100">
+          <div className="space-y-0.5">
             {rules.map(r => {
               const isActive = activeRuleId === r.id;
               const { host, uri } = splitPattern(r.urlPattern);
