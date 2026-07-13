@@ -126,6 +126,14 @@ const App: React.FC = () => {
                 setSidebarTab('history');
              }
         }
+        const mockId = params.get('mockId');
+        if (mockId) {
+             const foundRule = (result[MOCK_RULES_KEY] || []).find((r: MockRule) => r.id === mockId);
+             if (foundRule) {
+                openMockRuleInTab(foundRule);
+                setSidebarTab('mock');
+             }
+        }
         initializedRef.current = true;
       });
 

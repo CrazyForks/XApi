@@ -411,6 +411,38 @@
     "message": "挡板",
     "description": "侧边栏 Mock 标签"
   },
+  "headerTab": {
+    "message": "请求头",
+    "description": "弹窗 全局请求头 标签"
+  },
+  "globalHeaderOn": {
+    "message": "生效中",
+    "description": "全局请求头开关开启时的提示"
+  },
+  "globalHeaderOff": {
+    "message": "已暂停",
+    "description": "全局请求头开关关闭时的提示"
+  },
+  "globalHeaderHint": {
+    "message": "开启后，所有 XHR/Fetch 请求都会带上已启用的请求头。",
+    "description": "请求头标签页的提示文案"
+  },
+  "addHeader": {
+    "message": "添加请求头",
+    "description": "新增全局请求头按钮"
+  },
+  "headerKeyPlaceholder": {
+    "message": "名称",
+    "description": "请求头名称输入框占位符"
+  },
+  "headerValuePlaceholder": {
+    "message": "值",
+    "description": "请求头值输入框占位符"
+  },
+  "headerListEmpty": {
+    "message": "暂无请求头",
+    "description": "全局请求头列表空状态"
+  },
   "mockGlobalOn": {
     "message": "生效中",
     "description": "Mock 全局开关开启时的提示"

@@ -230,3 +230,7 @@ export const createJsonPatch = (partial?: Partial<JsonPatch>): JsonPatch => ({
 
 export const MOCK_RULES_KEY = 'mockRules';
 export const MOCK_GLOBAL_ENABLED_KEY = 'mockGlobalEnabled';
+
+// Global request headers (Header tab in popup).
+export const GLOBAL_HEADERS_KEY = 'globalHeaders';
+export const GLOBAL_HEADERS_ENABLED_KEY = 'globalHeadersEnabled';

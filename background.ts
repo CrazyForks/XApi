@@ -4,6 +4,14 @@
 const MAX_LOGS = 100;
 const EXTENSION_ID = chrome.runtime.id;
 
+// Rule IDs for declarativeNetRequest session rules.
+//  1 = dashboard replay header override (single URL, high priority)
+//  2 = global headers injected into every XHR/Fetch request (Header tab)
+const REPLAY_HEADER_RULE_ID = 1;
+const GLOBAL_HEADER_RULE_ID = 2;
+const GLOBAL_HEADERS_KEY = 'globalHeaders';
+const GLOBAL_HEADERS_ENABLED_KEY = 'globalHeadersEnabled';
+
 // Store pending requests in memory to correlate headers/body/completion
 const pendingRequests: Record<string, any> = {};
 
@@ -21,17 +29,76 @@ const updateBadge = (recording: boolean) => {
 chrome.runtime.onInstalled.addListener(() => {
   chrome.storage.local.set({ isRecording: false, logs: [] });
   updateBadge(false);
-  // Clear any existing dynamic rules on startup
+  // Clear any existing dynamic replay rule on startup
   chrome.declarativeNetRequest.updateSessionRules({
-     removeRuleIds: [1]
+     removeRuleIds: [REPLAY_HEADER_RULE_ID]
   });
+  // Rebuild the global header rule from persisted state.
+  applyGlobalHeaderRule();
+});
+
+// Session rules are cleared when the service worker/browser restarts, so
+// rebuild the global header rule whenever the SW spins back up.
+chrome.runtime.onStartup.addListener(() => {
+  applyGlobalHeaderRule();
 });
 
 chrome.storage.onChanged.addListener((changes) => {
   if (changes.isRecording) {
     updateBadge(changes.isRecording.newValue);
   }
+  if (changes[GLOBAL_HEADERS_KEY] || changes[GLOBAL_HEADERS_ENABLED_KEY]) {
+    applyGlobalHeaderRule();
+  }
 });
+
+// --- Global Header DNR Rule ---
+// Reads globalHeadersEnabled + globalHeaders from storage and maintains a
+// single session rule (id=2) that SETs each enabled header on every XHR/Fetch
+// request. Removes the rule when disabled or when no enabled headers exist.
+const applyGlobalHeaderRule = () => {
+    chrome.storage.local.get([GLOBAL_HEADERS_KEY, GLOBAL_HEADERS_ENABLED_KEY], (result) => {
+        if (chrome.runtime.lastError) return;
+        const enabled = result[GLOBAL_HEADERS_ENABLED_KEY] === true; // default OFF
+        const headers = (result[GLOBAL_HEADERS_KEY] || []) as any[];
+        const requestHeaders = headers
+            .filter(h => h && h.enabled && h.key)
+            .map(h => ({
+                header: h.key,
+                operation: chrome.declarativeNetRequest.HeaderOperation.SET,
+                value: h.value ?? ''
+            }));
+
+        if (!enabled || requestHeaders.length === 0) {
+            chrome.declarativeNetRequest.updateSessionRules({
+                removeRuleIds: [GLOBAL_HEADER_RULE_ID]
+            }).catch(() => { /* noop */ });
+            return;
+        }
+
+        const rule = {
+            id: GLOBAL_HEADER_RULE_ID,
+            // Lower than the replay rule (999) so a dashboard replay can still
+            // override the same header for its specific request.
+            priority: 1,
+            action: {
+                type: chrome.declarativeNetRequest.RuleActionType.MODIFY_HEADERS,
+                requestHeaders
+            },
+            condition: {
+                // XHR/Fetch only — leaves page navigation & static assets alone.
+                resourceTypes: [
+                    chrome.declarativeNetRequest.ResourceType.XMLHTTPREQUEST
+                ]
+            }
+        };
+
+        chrome.declarativeNetRequest.updateSessionRules({
+            removeRuleIds: [GLOBAL_HEADER_RULE_ID],
+            addRules: [rule as any]
+        }).catch(() => { /* noop */ });
+    });
+};
 
 // --- DNR Rule Manager for Header Overrides ---
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {

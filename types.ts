@@ -26,6 +26,14 @@ export interface HttpRequest {
   bodyRawType?: 'json' | 'text' | 'html' | 'xml';
 }
 
+// Global request headers injected into every XHR/Fetch request via DNR.
+export interface GlobalHeader {
+  id: string;
+  key: string;
+  value: string;
+  enabled: boolean;
+}
+
 export interface HttpResponse {
   status: number;
   statusText: string;

@@ -411,6 +411,38 @@
     "message": "Mock",
     "description": "Sidebar tab label for mock rules"
   },
+  "headerTab": {
+    "message": "Header",
+    "description": "Popup tab label for global request headers"
+  },
+  "globalHeaderOn": {
+    "message": "HEADERS ON",
+    "description": "Label when global header switch is on"
+  },
+  "globalHeaderOff": {
+    "message": "HEADERS OFF",
+    "description": "Label when global header switch is off"
+  },
+  "globalHeaderHint": {
+    "message": "When enabled, every XHR/Fetch request will carry the enabled headers.",
+    "description": "Hint text on the Header tab"
+  },
+  "addHeader": {
+    "message": "Add Header",
+    "description": "Button to add a new global header row"
+  },
+  "headerKeyPlaceholder": {
+    "message": "Header",
+    "description": "Placeholder for the header name input"
+  },
+  "headerValuePlaceholder": {
+    "message": "Value",
+    "description": "Placeholder for the header value input"
+  },
+  "headerListEmpty": {
+    "message": "No headers yet",
+    "description": "Empty state for the global header list"
+  },
   "mockGlobalOn": {
     "message": "ACTIVATING",
     "description": "Label when mock global switch is on"
