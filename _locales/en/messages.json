@@ -164,7 +164,7 @@
     "description": "Label for capturing status"
   },
   "paused": {
-    "message": "PAUSED",
+    "message": "Paused",
     "description": "Label for paused status"
   },
   "clear": {
@@ -444,7 +444,7 @@
     "description": "Empty state for the global header list"
   },
   "mockGlobalOn": {
-    "message": "ACTIVATING",
+    "message": "Activating",
     "description": "Label when mock global switch is on"
   },
   "mockGlobalOff": {
@@ -452,7 +452,7 @@
     "description": "Label when mock global switch is off"
   },
   "mockGlobalActive": {
-    "message": "ACTIVATING",
+    "message": "Activating",
     "description": "Status label when the mock global switch is active"
   },
   "mockNewRule": {

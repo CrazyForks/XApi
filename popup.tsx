@@ -284,19 +284,19 @@ const Popup = () => {
          <button className={tabButtonClass('capture')} onClick={() => selectTab('capture')}>
             <span className="inline-flex items-center justify-center gap-1.5">
                {captureTabText}
-               {isRecording && <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" title={recordingText} />}
+               <span className={`h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse ${isRecording ? '' : 'invisible'}`} title={recordingText} />
             </span>
          </button>
          <button className={tabButtonClass('mock')} onClick={() => selectTab('mock')}>
             <span className="inline-flex items-center justify-center gap-1.5">
                {mockTabText}
-               {mockGlobalEnabled && <span className="h-1.5 w-1.5 rounded-full bg-green-500" />}
+               <span className={`h-1.5 w-1.5 rounded-full bg-green-500 ${mockGlobalEnabled ? '' : 'invisible'}`} />
             </span>
          </button>
          <button className={tabButtonClass('header')} onClick={() => selectTab('header')}>
             <span className="inline-flex items-center justify-center gap-1.5">
                {headerTabText}
-               {globalHeadersEnabled && <span className="h-1.5 w-1.5 rounded-full bg-green-500" />}
+               <span className={`h-1.5 w-1.5 rounded-full bg-green-500 ${globalHeadersEnabled ? '' : 'invisible'}`} />
             </span>
          </button>
       </div>

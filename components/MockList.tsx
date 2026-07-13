@@ -54,7 +54,7 @@ export const MockList: React.FC<MockListProps> = ({
     return () => document.removeEventListener('click', close);
   }, []);
 
-  const activeLabel = t('mockGlobalActive', 'ACTIVATING');
+  const activeLabel = t('mockGlobalActive', 'Activating');
   const pausedLabel = t('paused', 'Paused');
   const newRuleText = t('mockNewRule', 'New Rule');
   const emptyText = t('mockListEmpty', 'No mock rules yet');
@@ -84,14 +84,14 @@ export const MockList: React.FC<MockListProps> = ({
             {rules.length > 0 && (
               <button
                 onClick={onClear}
-                className="text-[10px] text-gray-400 hover:text-red-500 font-bold uppercase"
+                className="text-[10px] text-gray-400 hover:text-red-500 font-bold"
               >
                 {clearText}
               </button>
             )}
             <button
               onClick={onCreate}
-              className="text-[10px] text-green-600 hover:text-green-700 font-bold uppercase flex items-center"
+              className="text-[10px] text-green-600 hover:text-green-700 font-bold flex items-center"
             >
               <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
               {newRuleText}
