@@ -1,6 +1,6 @@
 {
   "extName": {
-    "message": "XApi HTTP 客户端 - API 测试工具",
+    "message": "XApi HTTP 客户端 - API 工具，修改请求头与响应",
     "description": "在 Chrome 网上应用店和扩展管理页面显示的扩展名称"
   },
   "extDescription": {
